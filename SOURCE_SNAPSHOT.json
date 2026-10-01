@@ -1,0 +1,265 @@
+{
+  "schema": "forge_game_source_snapshot_v1",
+  "game": "Titans of Proxima",
+  "selected_source_sha256": "ba895bd25482b3c977202b6fdca69d17b1475cb022164d22338f601ef665af9d",
+  "runtime_files": [
+    {
+      "path": "index.html",
+      "sha256": "ecfb898d230c7df183153ff4e21cd500d652fb0ad3119683a1ea587d1af29645",
+      "bytes": 423
+    },
+    {
+      "path": "public/assets/building-atlas-expansion.png",
+      "sha256": "365efb8c8dc4e1a4619c05e21d8f4b94ca302a368ab5e96294d7b483be69f803",
+      "bytes": 702554
+    },
+    {
+      "path": "public/assets/building-atlas.png",
+      "sha256": "041100241f9924729562a9a409a681460566e306238a77dec949b6e41771be16",
+      "bytes": 1387820
+    },
+    {
+      "path": "public/assets/colony-building-atlas-expansion.png",
+      "sha256": "365efb8c8dc4e1a4619c05e21d8f4b94ca302a368ab5e96294d7b483be69f803",
+      "bytes": 702554
+    },
+    {
+      "path": "public/assets/colony-building-atlas.png",
+      "sha256": "041100241f9924729562a9a409a681460566e306238a77dec949b6e41771be16",
+      "bytes": 1387820
+    },
+    {
+      "path": "public/assets/lunar-terrain.png",
+      "sha256": "745990f9b5cc8c3109b70d2fb2bc4e32e375f2d3525ab3ea78b3f93e90094e62",
+      "bytes": 3760683
+    },
+    {
+      "path": "public/assets/mars-terrain.png",
+      "sha256": "ba6ecdb988404c5f49c1a9e126869a4e8dac4de5124197681ad2ceafe79ec261",
+      "bytes": 2771137
+    },
+    {
+      "path": "public/assets/proxima-industry-v1.png",
+      "sha256": "2a90f66e4090b8fae66d6b0a029e7b5529436e4ba86032c9c0e37e26ce8eba2d",
+      "bytes": 2099961
+    },
+    {
+      "path": "public/assets/proxima-science-v1.png",
+      "sha256": "6b1bb9d970a45aa130f1ea49289df6a73e9198e350cd8440ac1e8ab9898212bf",
+      "bytes": 1957535
+    },
+    {
+      "path": "public/assets/proxima-specialists-v1.png",
+      "sha256": "be302907b6c71434adda648c746e5336691f3025d3fff3580d8150375492751b",
+      "bytes": 1997068
+    },
+    {
+      "path": "public/assets/starship-luna-arrival-v1.png",
+      "sha256": "05a622a50d0b74b9c637cd7c34240fbb3c92a8db108fcf2dcb6754d6f250efd0",
+      "bytes": 2159074
+    },
+    {
+      "path": "public/assets/starship-luna-arrival-v2.png",
+      "sha256": "454e2a81693a3cf17642cdf275f2512e9b016d4c7b79ac73c957687128f9d6f5",
+      "bytes": 2066278
+    },
+    {
+      "path": "public/assets/starship-mars-arrival-v1.png",
+      "sha256": "2f94e82f117466b65b6d0733a34ca0a5844ca0bf9e4a25264cbb17eb2dcc89d4",
+      "bytes": 2065097
+    },
+    {
+      "path": "public/audio/bach-goldberg-aria.mp3",
+      "sha256": "f0b319eece23b4ccc2e969e1329f96b9f96027e794d073c7adf606dc26463f08",
+      "bytes": 7021056
+    },
+    {
+      "path": "public/audio/handel-water-music-sarabande.mp3",
+      "sha256": "d95226714dfd71bbe2398866d38591ba6c737c317e6a5385deb06a84a67ead4a",
+      "bytes": 4283445
+    },
+    {
+      "path": "public/audio/holst-mars.mp3",
+      "sha256": "395a71de2daaf5cbd67b5f4f63a72090d2466968727a55abd69a0626b4aa0bb0",
+      "bytes": 11987514
+    },
+    {
+      "path": "public/audio/holst-venus.mp3",
+      "sha256": "cceac999c61560ee867b88f45ec1e51c3b1f76b88a698b49b960ea3bd6453f63",
+      "bytes": 12290413
+    },
+    {
+      "path": "public/favicon.svg",
+      "sha256": "4122e5e5a04b2019e60f2fad61e21891bc002bf0ee4ed5c9f0c09187a8e9ec88",
+      "bytes": 327
+    },
+    {
+      "path": "public/preview.svg",
+      "sha256": "f0f2090e3259e02bb29b7033275327dbb08c7d2e7311671b0704aaa6164a8b0c",
+      "bytes": 5414
+    },
+    {
+      "path": "src/audio/audio.test.ts",
+      "sha256": "0b316670dab2a2cd94485cd735e261e17ab45a189ecd533122dd7f230524b2e3",
+      "bytes": 5047
+    },
+    {
+      "path": "src/audio/audio.ts",
+      "sha256": "6b72c5c17c675831be5091c92bde21a054a03a851d4a1397c92368a680a935f8",
+      "bytes": 3337
+    },
+    {
+      "path": "src/audio/soundtrack.ts",
+      "sha256": "03cd19838a0cbc7946d4f50104832b020445c2c7078c5b9a7a96c0862f900c52",
+      "bytes": 5190
+    },
+    {
+      "path": "src/core/actions.ts",
+      "sha256": "0ca26d305a107e002804ea7c07f8c3652f25cf846e32521c8eb453903abe4add",
+      "bytes": 23437
+    },
+    {
+      "path": "src/core/buildingStatus.ts",
+      "sha256": "dc6182d2f975f43d106ccc3696d0a20e5ff65e8fca9d7c172f3ecf4c006db38a",
+      "bytes": 1450
+    },
+    {
+      "path": "src/core/campaign.test.ts",
+      "sha256": "cded7b9ba9a0d477e2f652f892cce981e47f32ac169e210724ad19b014e07fe8",
+      "bytes": 5206
+    },
+    {
+      "path": "src/core/data.ts",
+      "sha256": "e3a02431f81276d02215db2138860e7559276b4f5b99f95565557ab30157ea85",
+      "bytes": 16980
+    },
+    {
+      "path": "src/core/events.ts",
+      "sha256": "87e36cf3b03ec2881cdcd749aef6e06c9c89a0bff8199cc1254ac3dd36d94f80",
+      "bytes": 20587
+    },
+    {
+      "path": "src/core/fieldGuide.test.ts",
+      "sha256": "814d7f2724e3ae50d8a1f63dc4b5cb9105ff064db6cce7fded0daae0662e2401",
+      "bytes": 2166
+    },
+    {
+      "path": "src/core/fieldGuide.ts",
+      "sha256": "2e9eeca3c965803a4e6d25e9afc0bcf3b9a35aa0f7443932c470d796c7366b44",
+      "bytes": 17030
+    },
+    {
+      "path": "src/core/format.ts",
+      "sha256": "3b9e7a36371d211ef27662b7c771f558401fdfc76ff36e2795fcf6dcf7558601",
+      "bytes": 586
+    },
+    {
+      "path": "src/core/hex.ts",
+      "sha256": "17752295416be7998fa0470a8ea67987ec9f2881153919125e4c5a0d8b65f9ed",
+      "bytes": 1973
+    },
+    {
+      "path": "src/core/industry.test.ts",
+      "sha256": "e89f7fb0df30d0fe8f1b94f3cf4377fc6913db572e9d0be055dcbb3420d3871c",
+      "bytes": 9384
+    },
+    {
+      "path": "src/core/mapgen.ts",
+      "sha256": "8fae0d251fb48841d0252fa44fc559d0d67a6b63c9d3b165c9572d9b4ae39838",
+      "bytes": 4039
+    },
+    {
+      "path": "src/core/mechanics.test.ts",
+      "sha256": "576403eabad782859361512ac5930b296a436cb37fe0dffde8333759e2e9e56e",
+      "bytes": 3614
+    },
+    {
+      "path": "src/core/rng.ts",
+      "sha256": "48c425c0e1ec367595ebfb97185e9ce6e727879f5c1cfe09d5f92cf1ff114103",
+      "bytes": 781
+    },
+    {
+      "path": "src/core/routes.ts",
+      "sha256": "4c0479e1137e0034bebe9181660504feb7399e5f30432d5212b7e741bd8fd10b",
+      "bytes": 2396
+    },
+    {
+      "path": "src/core/save.ts",
+      "sha256": "f16df4dabb02eccd8ef45aaf38bea77ce672ec8dfaf35865f00903abdedf06dc",
+      "bytes": 2081
+    },
+    {
+      "path": "src/core/sim.ts",
+      "sha256": "756e130e86ac43197e96ca604da301aa33a8c0fd35e56b43e866773fb7a72ba8",
+      "bytes": 31387
+    },
+    {
+      "path": "src/core/state.ts",
+      "sha256": "95b50cd179ab3b58c8c2f88834de9f6de89e9ae0f548c9adef6a51e6d1eb6eff",
+      "bytes": 4719
+    },
+    {
+      "path": "src/core/types.ts",
+      "sha256": "09e560ebe38e18c26fbc59de7a8f3eb7b406b7b8d6b584eaf32084610a9fa286",
+      "bytes": 4685
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "59d85a7f5c81e7083486dec262636fd46838dce8cad23071dc3d7164bdaf6eaa",
+      "bytes": 183
+    },
+    {
+      "path": "src/render/assets.ts",
+      "sha256": "39672cf944a59f28b31b2c6b5f0951b7b94b01a545f7a589a4a6d0182d26f1b7",
+      "bytes": 3730
+    },
+    {
+      "path": "src/render/camera.ts",
+      "sha256": "3b4ed8d389e233a4f77213090ca42be6f033dcfeb419bd0b7ec5d5df00123bc4",
+      "bytes": 1638
+    },
+    {
+      "path": "src/render/draw.ts",
+      "sha256": "cf572bdeb18b2a738217981a116da74e96cf1b7e9961b41451ec708692b2ea31",
+      "bytes": 26702
+    },
+    {
+      "path": "src/render/polish.test.ts",
+      "sha256": "cac794f90beb5507b056954a77743022cd31776852e0c698238fc966b7bdee34",
+      "bytes": 3168
+    },
+    {
+      "path": "src/selftest.ts",
+      "sha256": "ab158f0ac036251ce38ecf1f49515a70d06630856b8dbf67a6107bdf81c3c110",
+      "bytes": 7314
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "6b9156b5fc0193a3a76cfdbb1fcc50675710a0618deec303f528e78c2ef15d4c",
+      "bytes": 17588
+    },
+    {
+      "path": "src/ui/app.ts",
+      "sha256": "2b66e9f4e3715793b7f04586b5654a3dbbd39594f04fd7510911475a057412a8",
+      "bytes": 81895
+    },
+    {
+      "path": "src/ui/cinematics.test.ts",
+      "sha256": "a80264cec33dcbc193db823e6853d57ac0c4f3d82e4824779e4f71d3e52de151",
+      "bytes": 1581
+    },
+    {
+      "path": "src/ui/cinematics.ts",
+      "sha256": "7aba9620325393d934ba518f800ad832e2aadc671f4a45ce68929f23bf2fd64d",
+      "bytes": 1109
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "bytes": 38
+    }
+  ],
+  "history_exported": false,
+  "input_archive_sha256": null,
+  "authoring_workspace_recovered": true
+}

@@ -1,0 +1,87 @@
+{
+  "schema": "forge_game_media_inventory_v1",
+  "assets": [
+    {
+      "path": "public/assets/building-atlas-expansion.png",
+      "sha256": "365efb8c8dc4e1a4619c05e21d8f4b94ca302a368ab5e96294d7b483be69f803",
+      "bytes": 702554
+    },
+    {
+      "path": "public/assets/building-atlas.png",
+      "sha256": "041100241f9924729562a9a409a681460566e306238a77dec949b6e41771be16",
+      "bytes": 1387820
+    },
+    {
+      "path": "public/assets/colony-building-atlas-expansion.png",
+      "sha256": "365efb8c8dc4e1a4619c05e21d8f4b94ca302a368ab5e96294d7b483be69f803",
+      "bytes": 702554
+    },
+    {
+      "path": "public/assets/colony-building-atlas.png",
+      "sha256": "041100241f9924729562a9a409a681460566e306238a77dec949b6e41771be16",
+      "bytes": 1387820
+    },
+    {
+      "path": "public/assets/lunar-terrain.png",
+      "sha256": "745990f9b5cc8c3109b70d2fb2bc4e32e375f2d3525ab3ea78b3f93e90094e62",
+      "bytes": 3760683
+    },
+    {
+      "path": "public/assets/mars-terrain.png",
+      "sha256": "ba6ecdb988404c5f49c1a9e126869a4e8dac4de5124197681ad2ceafe79ec261",
+      "bytes": 2771137
+    },
+    {
+      "path": "public/assets/proxima-industry-v1.png",
+      "sha256": "2a90f66e4090b8fae66d6b0a029e7b5529436e4ba86032c9c0e37e26ce8eba2d",
+      "bytes": 2099961
+    },
+    {
+      "path": "public/assets/proxima-science-v1.png",
+      "sha256": "6b1bb9d970a45aa130f1ea49289df6a73e9198e350cd8440ac1e8ab9898212bf",
+      "bytes": 1957535
+    },
+    {
+      "path": "public/assets/proxima-specialists-v1.png",
+      "sha256": "be302907b6c71434adda648c746e5336691f3025d3fff3580d8150375492751b",
+      "bytes": 1997068
+    },
+    {
+      "path": "public/assets/starship-luna-arrival-v1.png",
+      "sha256": "05a622a50d0b74b9c637cd7c34240fbb3c92a8db108fcf2dcb6754d6f250efd0",
+      "bytes": 2159074
+    },
+    {
+      "path": "public/assets/starship-luna-arrival-v2.png",
+      "sha256": "454e2a81693a3cf17642cdf275f2512e9b016d4c7b79ac73c957687128f9d6f5",
+      "bytes": 2066278
+    },
+    {
+      "path": "public/assets/starship-mars-arrival-v1.png",
+      "sha256": "2f94e82f117466b65b6d0733a34ca0a5844ca0bf9e4a25264cbb17eb2dcc89d4",
+      "bytes": 2065097
+    },
+    {
+      "path": "public/audio/bach-goldberg-aria.mp3",
+      "sha256": "f0b319eece23b4ccc2e969e1329f96b9f96027e794d073c7adf606dc26463f08",
+      "bytes": 7021056
+    },
+    {
+      "path": "public/audio/handel-water-music-sarabande.mp3",
+      "sha256": "d95226714dfd71bbe2398866d38591ba6c737c317e6a5385deb06a84a67ead4a",
+      "bytes": 4283445
+    },
+    {
+      "path": "public/audio/holst-mars.mp3",
+      "sha256": "395a71de2daaf5cbd67b5f4f63a72090d2466968727a55abd69a0626b4aa0bb0",
+      "bytes": 11987514
+    },
+    {
+      "path": "public/audio/holst-venus.mp3",
+      "sha256": "cceac999c61560ee867b88f45ec1e51c3b1f76b88a698b49b960ea3bd6453f63",
+      "bytes": 12290413
+    }
+  ],
+  "rights_record": "MEDIA_RIGHTS.md",
+  "private_receipts_included": false
+}

@@ -1,0 +1,83 @@
+Forge Game Hosting License 1.0
+Approved by the owner on September 30, 2026.
+This license applies only to releases identified in accompanying licensing checkpoints.
+Earlier permissions and separately licensed components remain unaffected.
+
+### 1. Covered release and material
+
+Titans Forge LLC (the Licensor) offers these terms for the game release
+identified in its accompanying licensing checkpoint. They cover only the
+Licensor-controlled code, documentation, and assets explicitly identified in
+that release's rights notices. Third-party materials and separately licensed
+components retain their own terms. No trademark license or endorsement is
+granted.
+
+These terms apply only when supplied with the specifically identified release.
+They do not revoke, replace, or narrow permissions already granted under MIT
+or another license, including permissions for identical material previously
+obtained under those terms. Earlier versions keep their original terms.
+
+### 2. Permitted use
+
+Subject to the hosting restriction and preservation of applicable notices,
+you may play, run, study, copy, modify, and share the covered material. Personal
+and private internal use, including private classroom use, does not require
+a separate commercial license, regardless of company revenue. These
+permissions do not grant rights over third-party material beyond its own terms.
+
+### 3. Commercial hosting threshold
+
+A company whose gross annual revenue exceeds US$1,000,000 must obtain a
+separate written commercial hosting license from Titans Forge LLC before
+hosting the covered release or a modified version of its covered material.
+The threshold is strictly **over** US$1,000,000, not equal to that amount.
+It applies whether or not the company charges players or earns money from
+this particular game. Companies at or below that threshold do not require
+a separate commercial hosting license under this restriction.
+
+For these terms, hosting means making a playable copy or interactive instance
+publicly available to others through a website, application, or game service.
+The revenue test uses total gross revenue of the company and its controlled
+subsidiaries for the most recently completed fiscal year, converted to US
+dollars using that year's average exchange rate from an identified recognized
+public financial source. Existing grants under other licenses remain available
+as described in Section 1.
+
+### 4. What is not restricted hosting
+
+Ordinary play, private internal use, private classroom use, a link to an
+official game page, and an embedded player whose game is actually served by
+an authorized distribution platform are not hosting one's own copy under
+Section 3. Hosting elsewhere still requires the rights applicable to that
+copy; an iframe or proxy does not waive those rights.
+
+These terms do not limit itch.io's existing platform distribution authorization
+or another separately granted distribution license. Existing licenses are not
+silently revoked by a new website notice.
+
+### 5. Notices and redistribution
+
+Retain these terms, the release identifier, required copyright attribution,
+and third-party notices when redistributing covered material. Identify your
+modifications and do not present them as an official Titans Forge release.
+Distributing a copy does not remove the hosting restriction for recipients.
+Do not remove or replace notices for earlier MIT or other independently
+licensed components.
+
+### 6. Warranty and liability
+
+The covered material is provided without promises about performance,
+suitability, availability, or freedom from defects. To the extent permitted
+by applicable law, the Licensor excludes warranties and liability for losses
+arising from use of the covered material. Mandatory legal rights are not
+excluded.
+
+### 7. Commercial arrangements
+
+Commercial hosting permission must come from a separate written agreement
+with Titans Forge LLC. These community terms do not set a fee or authorize
+anyone to accept a commercial agreement on the Licensor's behalf. Licensing
+inquiries may be directed through the official Titans Forge itch.io profile:
+https://titans-forge.itch.io/.
+
+
