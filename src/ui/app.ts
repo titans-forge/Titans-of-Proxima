@@ -40,8 +40,11 @@ import {
   TERRAIN_LABEL,
 } from "../core/data";
 import { fmt, fmtInt, fmtSigned } from "../core/format";
-import { applyTurn, blockingReason, forecast, objectives, researchRate, runway, suggestions } from "../core/sim";
+import { applyTurn, blockingReason, forecast, objectives, researchRate, runway } from "../core/sim";
+import { buildingImpact, constructionGuidance, type ConstructionGuidance } from "../core/guidance";
+import { cargoLimit, fuelLimit, initialLaunchDraft, launchSummary, quotaReady, shipManifestKey, shipIntegrity } from "./fleetDraft";
 import { isWindowOpen, planRoute, solsUntilWindow, solsWindowLeft } from "../core/routes";
+import { availableRouteHull, chartShipStatus, compareDepartures, LOCATION_NAMES, windowCalendar, windowSummary, type DepartureOption, type RouteSelection } from "../core/routeIntel";
 import { loadFrom, loadMeta, saveMeta, saveTo, type Meta, type SlotId } from "../core/save";
 import { createGame } from "../core/state";
 import type { BuildingId, CargoId, Difficulty, GameState, LocationId, Ship, Tile, TechId, WorldId } from "../core/types";
@@ -53,6 +56,9 @@ import { SoundtrackPlayer, soundtrackTracks } from "../audio/soundtrack";
 import { buildingSpriteStyle } from "../render/assets";
 import { FIELD_GUIDE, FIELD_GUIDE_CATEGORIES, guideCategory } from "../core/fieldGuide";
 import { buildingStatus } from "../core/buildingStatus";
+import { exportPlan, operationsBrief, type OperationsBrief } from "../core/operations";
+import { crewArrivalAdvice, crewCapacity, crewDepartureBlocker, crewReturnPlan, crewTransferPlan } from "../core/crewTransport";
+import { previewShipRepair, repairShip } from "../core/shipService";
 import { boundsForTiles, clampCamera } from "../render/camera";
 import type { Forecast } from "../core/types";
 import { cinematicSeenKey, decideCinematic, shouldShowPendingMarsArrival, type CinematicKind } from "./cinematics";
@@ -74,6 +80,7 @@ interface UiState {
   tutorial: number | null;
   shipId: string | null;
   draft: LaunchDraft | null;
+  route: RouteSelection;
   order: { dest: WorldId; food: number; water: number; oxygen: number; metals: number; propellant: number };
   pulses: { world: WorldId; q: number; r: number; born: number }[];
   toasts: Toast[];
@@ -143,6 +150,8 @@ export class GameApp {
   private dpr = 1;
   private ptr: { id: number; x: number; y: number; moved: number; cx: number; cy: number } | null = null;
   private forecasts: Partial<Record<WorldId, Forecast>> = {};
+  private guidance: Partial<Record<WorldId, ConstructionGuidance>> = {};
+  private draftBasis = "";
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -161,6 +170,7 @@ export class GameApp {
       tutorial: null,
       shipId: null,
       draft: null,
+      route: { from: "earth", to: "mars", cls: "colony" },
       order: { dest: "luna", food: 12, water: 12, oxygen: 12, metals: 0, propellant: 8 },
       pulses: [],
       toasts: [],
@@ -177,6 +187,7 @@ export class GameApp {
       <div id="toasts"></div>
       <div id="title"></div>
       <div id="hud" hidden>
+        <div id="scrim" hidden data-act="scrim"></div>
         <header class="top luna">
           <div class="brand">
             <span class="mark" aria-hidden="true"></span>
@@ -189,7 +200,7 @@ export class GameApp {
           </div>
           <div class="top-meta">
             <button type="button" class="only-mobile texty" data-act="drawer" data-id="l">Colony</button>
-            <button type="button" class="only-mobile texty" data-act="drawer" data-id="r">Site</button>
+            <button type="button" class="only-mobile texty" data-act="drawer" data-id="r" id="site-drawer">Site</button>
             <div class="sol" id="sol-readout">Sol 1</div>
             <div class="credits" id="credit-readout">0 cr</div>
             <button type="button" class="texty" data-act="mute" id="btn-mute">Mute</button>
@@ -201,6 +212,7 @@ export class GameApp {
           <aside id="left" class="panel panel-l"></aside>
           <div id="viewport">
             <div id="banner" hidden></div>
+            <div id="system-readout" hidden></div>
             <button type="button" class="home-control" data-act="home" aria-label="Center colony">⌂ <span>Home</span></button>
             <div id="legend"></div>
             <div id="tip" hidden></div>
@@ -222,7 +234,6 @@ export class GameApp {
           <p class="keys hide-mobile" id="end-reason">1 Luna · 2 Mars · 3 System · E resolve · F fleet · R research · C Earth · G goals · M mute</p>
         </footer>
       </div>
-      <div id="scrim" hidden data-act="scrim"></div>
       <div id="modal" hidden>
         <div class="backdrop" data-act="close"></div>
         <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -321,6 +332,12 @@ export class GameApp {
 
   private draw(now: number): void {
     const g = this.geom();
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const annotationExclusions = Array.from(this.root.querySelectorAll<HTMLElement>("#banner, #legend, .home-control"))
+      .filter(el => !el.hidden)
+      .map(el => el.getBoundingClientRect())
+      .filter(rect => rect.width > 0 && rect.height > 0)
+      .map(rect => ({ x: rect.left - canvasRect.left, y: rect.top - canvasRect.top, w: rect.width, h: rect.height }));
     renderFrame(
       this.ctx,
       this.canvas.clientWidth,
@@ -336,6 +353,8 @@ export class GameApp {
         founding: !!this.game?.founding,
         anim: this.meta.anim,
         forecasts: this.forecasts,
+        route: this.ui.view === "system" ? this.ui.route : undefined,
+        annotationExclusions,
       },
       g,
       now,
@@ -498,10 +517,14 @@ export class GameApp {
     const game = this.game;
     if (!game || this.ui.screen !== "play") return;
     this.forecasts = { luna: forecast(game, "luna"), mars: forecast(game, "mars") };
+    this.guidance = { luna: constructionGuidance(game, "luna"), mars: constructionGuidance(game, "mars") };
+    const selectedShip = game.ships.find(s => s.id === this.ui.shipId);
+    if (selectedShip && this.draftBasis !== shipManifestKey(selectedShip)) this.ensureDraft(game, selectedShip);
     this.clampCam();
     const top = this.root.querySelector(".top") as HTMLElement;
     top.classList.remove("luna", "mars", "system");
     top.classList.add(this.ui.view);
+    (this.root.querySelector("#site-drawer") as HTMLElement).textContent = this.ui.view === "system" ? "Routes" : "Site";
     (this.root.querySelector("#sol-readout") as HTMLElement).textContent = `Sol ${game.turn}`;
     (this.root.querySelector("#credit-readout") as HTMLElement).textContent = `${fmtInt(game.credits)} cr`;
     (this.root.querySelector("#btn-mute") as HTMLElement).textContent = this.meta.muted ? "Unmute" : "Mute";
@@ -587,6 +610,7 @@ export class GameApp {
       <h2 class="world-name">${esc(world.name)}</h2>
       <div class="chips">${chips}</div>
       <div class="rowline"><span>Morale</span><span>${fmt(world.morale)}</span></div>
+      ${world.founded ? `<p class="faint">Next sol ${fmt(f.moraleNext)} · current equilibrium ${fmt(f.moraleTarget)}</p>` : ""}
       <div class="meter" aria-hidden="true"><span style="width:${world.morale}%;background:${world.morale < 25 ? "var(--bad)" : "var(--gold)"}"></span></div>
       <div class="rowline"><span>Crew</span><span>${world.pop} / ${f.housing || "—"} berths</span></div>
       <div class="rowline"><span>Power</span><span>${fmt(f.energyGen)} gen / ${fmt(f.energyDraw)} draw</span></div>
@@ -594,6 +618,7 @@ export class GameApp {
       <div class="section-label">Stores · next sol</div>
       ${world.founded ? rows : `<p class="muted">No consumption until a colony ship lands.</p>`}
       ${f.notes.map((n) => `<p class="faint">${esc(n)}</p>`).join("")}
+      ${world.founded && !game.tech.current ? `<p class="warn">Research idle · ${fmt(researchRate(game))} RP/sol unused.</p><button type="button" class="texty" data-act="modal" data-id="tech">Choose research</button>` : ""}
       <div class="section-label">Charter goals</div>
       <ul class="goals">${goals}</ul>
       ${game.contract ? `<p class="warn">Open quota: ${esc(game.contract.title)} by sol ${game.contract.deadline}.</p>` : ""}
@@ -617,9 +642,9 @@ export class GameApp {
     return `<p class="kicker">System</p><h2 class="world-name">Earth · Luna · Mars</h2><p class="muted">${win}</p>${block("luna")}${block("mars")}
       <div class="section-label">Hulls</div>
       ${game.ships
-        .map((s) => `<div class="rowline"><span>${esc(s.name)}</span><span class="faint">${s.mission ? s.mission.to + " · " + s.mission.eta + " sols" : s.loc}</span></div>`)
+        .map((s) => `<button type="button" class="fleet-link" data-act="chart-ship" data-id="${esc(s.id)}"><b>${esc(s.name)}</b><small>${esc(chartShipStatus(game, s))}</small></button>`)
         .join("")}
-      <p class="faint">Click a world to descend. Earth opens the desk.</p>`;
+      `;
   }
 
   private rightHTML(game: GameState): string {
@@ -636,13 +661,14 @@ export class GameApp {
     const f = forecast(game, id);
     const head = tile ? this.tileHTML(tile, f.tiles[`${tile.q},${tile.r}`] ?? [], id) : `<p class="kicker">Site</p><h2 class="world-name">No hex selected</h2><p class="muted">Select a tile. New modules must touch a module already on the ground. Adjacency is the bonus: greenhouses like ice, labs like habitats, fission dislikes bedrooms.</p>`;
     if (!world.founded) return head + `<p class="warn">Orbital survey only. A colony ship has to land before you can build.</p>`;
-    const suggest = new Set(suggestions(game, id));
-    const next = suggestions(game, id)[0];
+    const advice = this.guidance[id];
+    const next = advice?.building;
+    const suggest = new Set(next ? [next] : []);
     const hint = this.hintTile(game);
     const quick =
       next && hint
-        ? `<button type="button" class="btn primary" data-act="build-hint" data-id="${next}">Build ${esc(BUILDINGS[next].name)} on the marked hex</button>`
-        : "";
+        ? `<p class="muted">${esc(advice?.reason ?? "")}</p><button type="button" class="btn primary" data-act="build-hint" data-id="${next}">Build ${esc(BUILDINGS[next].name)} on the marked hex</button><p class="decision-read">${esc(this.buildImpactText(game, id, hint.q, hint.r, next))}</p>`
+        : advice ? `<p class="muted">${esc(advice.reason)}</p>${advice.blocker ? `<p class="warn">${esc(advice.blocker)}</p>` : ""}` : "";
     if (tile?.building) return head + quick + `<button type="button" class="btn" data-act="construction-site">Choose construction site</button>`;
     const groups = ["power", "life", "industry", "science", "flight"] as const;
     const menu = groups
@@ -654,7 +680,8 @@ export class GameApp {
             const bits = [cost.metals ? `${cost.metals} met` : "", cost.water ? `${cost.water} w` : "", cost.credits ? `${cost.credits} cr` : "", `${BUILDINGS[b].turns} sol`]
               .filter(Boolean)
               .join(" · ");
-            return `<button type="button" class="build ${suggest.has(b) ? "suggest" : ""} ${err ? "blocked" : ""}" data-act="build" data-id="${b}" title="${esc(err || BUILDINGS[b].blurb)}">
+            const impact = tile && !err ? this.buildImpactText(game, id, tile.q, tile.r, b) : "";
+            return `<button type="button" class="build ${suggest.has(b) ? "suggest" : ""} ${err ? "blocked" : ""}" data-act="build" data-id="${b}" title="${esc(err || `${BUILDINGS[b].blurb} ${impact}`)}">
               <i class="build-thumb" aria-hidden="true" style="${esc(buildingSpriteStyle(id, b))}"></i>
               ${suggest.has(b) ? `<span class="next">Next</span>` : ""}<b>${BUILDINGS[b].name}</b><small class="${err ? "why" : ""}">${esc(err || bits)}</small>
             </button>`;
@@ -664,6 +691,16 @@ export class GameApp {
       })
       .join("");
     return head + quick + menu;
+  }
+
+  private buildImpactText(game: GameState, id: WorldId, q: number, r: number, type: BuildingId): string {
+    const impact = buildingImpact(game, id, q, r, type);
+    if (!impact) return "";
+    const changes = RESOURCES.filter(k => Math.abs(impact.after.net[k] - impact.before.net[k]) > 0.05)
+      .map(k => `${RESOURCE_META[k].label.toLowerCase()} ${fmtSigned(impact.after.net[k] - impact.before.net[k])} ${RESOURCE_META[k].unit}/sol`);
+    const rp = impact.after.rp - impact.before.rp;
+    if (Math.abs(rp) > 0.05) changes.push(`research ${fmtSigned(rp)} RP/sol`);
+    return `Finished in ${impact.completionSols} sols. At today's crew, weather and stores: ${changes.join("; ") || "no flow change"}. After ordering: ${fmt(impact.metalsLeft)} t metals, ${fmt(impact.creditsLeft)} cr.${impact.after.unpowered.length > impact.before.unpowered.length ? " Warning: additional modules would lose power." : ""}`;
   }
 
   private tileHTML(tile: Tile, lines: string[], worldId: "luna" | "mars"): string {
@@ -689,24 +726,24 @@ export class GameApp {
   }
 
   private routesHTML(game: GameState): string {
-    const pairs: [LocationId, LocationId][] = [
-      ["earth", "luna"],
-      ["luna", "earth"],
-      ["earth", "mars"],
-      ["mars", "earth"],
-      ["luna", "mars"],
-      ["mars", "luna"],
-    ];
-    const rows = pairs
-      .map(([a, b]) => {
-        const p = planRoute(game, a, b, "freighter");
-        return `<div class="rowline"><span>${a} → ${b}</span><span>${p.turns} sols · ${p.burn} t · ${Math.round(p.risk * 100)}%</span></div>`;
-      })
-      .join("");
-    return `<p class="kicker">Transfers</p><h2 class="world-name">Freighter legs</h2>
-      <p class="muted">${isWindowOpen(game.turn) ? `Window open · ${solsWindowLeft(game.turn)} sols left, including this one.` : `Window closed · opens in ${solsUntilWindow(game.turn)} sols.`}</p>
-      ${rows}
-      <p class="faint">Couriers are one sol faster. Nuclear thermal and cyclers shave the Mars legs after you research them. Risk is rolled on arrival.</p>`;
+    const route = this.ui.route;
+    const compare = compareDepartures(game, route);
+    const options = (selected: LocationId, exclude?: LocationId) => (["earth", "luna", "mars"] as LocationId[])
+      .filter(id => id !== exclude).map(id => `<option value="${id}" ${selected === id ? "selected" : ""}>${LOCATION_NAMES[id]}</option>`).join("");
+    const read = (title: string, option: DepartureOption) => `<div class="route-option"><h3>${title}</h3>
+      <div class="route-numbers"><div><strong>${option.plan.turns}</strong><span>sols in flight</span></div><div><strong>${option.plan.burn}<small> t</small></strong><span>fuel burn</span></div><div><strong>${(option.plan.risk * 100).toFixed(1)}<small>%</small></strong><span>incident risk</span></div></div>
+      <p>Departs sol ${option.departure} · arrives sol ${option.arrival}</p></div>`;
+    const ship = availableRouteHull(game, route);
+    const future = compare.window;
+    const arrivalDelta = future ? Math.abs(future.arrival - compare.now.arrival) : 0;
+    const benefit = future ? `Waiting ${future.wait} sol${future.wait === 1 ? "" : "s"} saves ${compare.now.plan.burn - future.plan.burn} t fuel and ${((compare.now.plan.risk - future.plan.risk) * 100).toFixed(1)} percentage points of risk. Arrival ${arrivalDelta === 0 ? "is the same sol" : `is ${arrivalDelta} sol${arrivalDelta === 1 ? "" : "s"} ${future.arrival < compare.now.arrival ? "earlier" : "later"}`}.` : "";
+    return `<p class="kicker">Route planner</p><h2 class="world-name">${LOCATION_NAMES[route.from]} → ${LOCATION_NAMES[route.to]}</h2>
+      <div class="route-fields"><label>From<select aria-label="Route origin" data-route="from">${options(route.from)}</select></label><label>To<select aria-label="Route destination" data-route="to">${options(route.to, route.from)}</select></label></div>
+      <label class="route-class">Hull<select aria-label="Route hull" data-route="cls">${SHIP_CLASSES.map(id => `<option value="${id}" ${id === route.cls ? "selected" : ""}>${SHIPS[id].name}</option>`).join("")}</select></label>
+      ${read("Depart today", compare.now)}${future ? read(`Wait for sol ${future.departure}`, future) + `<p class="decision-read">${benefit}</p>` : `<p class="good">${compare.now.plan.mars ? "Today's departure is inside the Mars window." : "This leg does not depend on the Mars window."}</p>`}
+      <button type="button" class="btn primary" data-act="route-fleet" ${ship ? "" : "disabled"}>${ship ? `Prepare ${esc(ship.name.replace("PAS ", ""))}` : "No matching hull at origin"}</button>
+      ${future ? `<p class="faint">Window estimate holds today's weather and technology fixed. Colony needs and crises still advance while you wait.</p>` : ""}
+      <p class="faint">Incident risk is a game probability, not a guarantee of damage. Preparation does not launch or schedule a ship.</p>`;
   }
 
   private hintTile(game: GameState | null): { q: number; r: number } | null {
@@ -717,13 +754,12 @@ export class GameApp {
       return world.tiles.find((t) => landingAdvice(game, id, t.q, t.r) === "good") ?? null;
     }
     if (!world.founded) return null;
-    const next = suggestions(game, id)[0];
-    if (!next) return null;
-    return world.tiles.find((t) => placementError(game, id, t.q, t.r, next) === null) ?? null;
+    return this.guidance[id]?.site ?? null;
   }
 
   private paintBanner(game: GameState): void {
     const banner = this.root.querySelector("#banner") as HTMLElement;
+    if (this.ui.view === "system") { banner.hidden = true; return; }
     if (game.founding) {
       banner.hidden = false;
       banner.innerHTML = `<strong>Landing window.</strong> ${esc(game.worlds[game.founding.world].name)} is under your hull. The gold hex is a sound site — click it, or press Land on the right.`;
@@ -736,12 +772,18 @@ export class GameApp {
       banner.innerHTML = `<strong>PAS Halcyon is at Earth.</strong> ${open ? `Mars window is open for ${solsWindowLeft(game.turn)} sols.` : `Window in ${solsUntilWindow(game.turn)} sols. You can still launch off-window.`} Open Fleet and load a founding kit.`;
       return;
     }
-    if (this.ui.view !== "system" && game.worlds[this.ui.view].founded) {
-      const next = suggestions(game, this.ui.view)[0];
+    if (game.worlds[this.ui.view].founded) {
+      const advice = this.guidance[this.ui.view];
+      const next = advice?.building;
       const hint = this.hintTile(game);
       if (next && hint) {
         banner.hidden = false;
-        banner.innerHTML = `<strong>Next.</strong> ${BUILDINGS[next].name} on the gold hex. Use the button on the right, or click the hex and build it yourself.`;
+        banner.innerHTML = `<strong>${BUILDINGS[next].name}.</strong> ${esc(advice?.reason ?? "")} Gold marks the recommended site.`;
+        return;
+      }
+      if (next && advice?.blocker) {
+        banner.hidden = false;
+        banner.innerHTML = `<strong>${BUILDINGS[next].name} is waiting.</strong> ${esc(advice.blocker)}`;
         return;
       }
     }
@@ -750,8 +792,12 @@ export class GameApp {
 
   private paintLegend(): void {
     const host = this.root.querySelector("#legend") as HTMLElement;
+    host.classList.toggle("system-legend", this.ui.view === "system");
+    const readout = this.root.querySelector("#system-readout") as HTMLElement;
+    readout.hidden = this.ui.view !== "system" || !this.game;
     if (this.ui.view === "system") {
-      host.innerHTML = `<span>Gold arc = Mars window</span><span>Chevrons = hulls</span>`;
+      if (this.game) readout.innerHTML = `<p class="kicker">Transfer calendar</p><h2>${windowSummary(this.game.turn)}</h2><div class="window-calendar" aria-label="Mars departure window, next nine sols">${windowCalendar(this.game.turn).map(d => `<span class="${d.open ? "open" : ""} ${d.today ? "today" : ""}" title="Sol ${d.sol}: ${d.open ? "Mars window open" : "Mars window closed"}${d.today ? "; today" : ""}">${d.sol}<i>${d.open ? "Open" : "—"}</i></span>`).join("")}</div>`;
+      host.innerHTML = `<span class="chart-key">Selected route</span><span>Gold = open Mars legs</span><span>Schematic · not to scale</span>`;
       return;
     }
     const mars = this.ui.view === "mars";
@@ -875,7 +921,8 @@ export class GameApp {
       return `<p>${esc(this.ui.confirm.body)}</p><div class="inline"><button type="button" class="btn primary" data-act="confirm-yes">${esc(this.ui.confirm.yes)}</button><button type="button" class="texty" data-act="close">Cancel</button></div>`;
     }
     if (m === "objectives") {
-      return objectives(game)
+      const brief = operationsBrief(game);
+      return this.goalRoadmapHTML(game, brief) + objectives(game)
         .map(
           (o) => `<div class="choice" style="cursor:default"><b class="${o.done ? "good" : ""}">${o.done ? "Complete · " : ""}${esc(o.label)}</b><span class="muted">${esc(o.detail)} ${esc(o.progress)}</span></div>`,
         )
@@ -993,6 +1040,7 @@ export class GameApp {
   }
 
   private earthHTML(game: GameState): string {
+    const brief = operationsBrief(game);
     const rows = CARGO_IDS.map((id) => {
       const buy = buyPrice(game, id);
       return `<tr><td>${RESOURCE_META[id].label}</td><td>${Number.isFinite(buy) ? fmt(buy) : "—"}</td><td>${fmt(sellPrice(game, id))}</td></tr>`;
@@ -1023,7 +1071,7 @@ export class GameApp {
     const contract = game.contract
       ? `<p class="warn">${esc(game.contract.title)} · due sol ${game.contract.deadline} · ${esc(game.contract.detail)}</p>`
       : `<p class="faint">No open quota.</p>`;
-    return `<div class="cols"><div>
+    return this.operationsHTML(game, brief) + this.crewPlannerHTML(game) + `<div class="cols"><div>
       <p>${isWindowOpen(game.turn) ? `Mars window open · ${solsWindowLeft(game.turn)} sols.` : `Mars window in ${solsUntilWindow(game.turn)} sols.`}</p>
       ${contract}
       ${game.priceTurns > 0 ? `<p class="warn">Tariff elevated for ${game.priceTurns} sols.</p>` : ""}
@@ -1047,6 +1095,59 @@ export class GameApp {
     </div></div>`;
   }
 
+  private goalRoadmapHTML(game: GameState, brief: OperationsBrief): string {
+    const diff = DIFF[game.difficulty];
+    return `<div class="section-label">Population roadmap</div><div class="population-roadmap">${brief.population.map(p => `<section>
+      <div class="rowline"><b>${p.world === "luna" ? "Luna" : "Mars"}</b><span>${p.population} / ${p.target} crew</span></div>
+      <div class="goal-meter" role="progressbar" aria-label="${p.world === "luna" ? "Luna" : "Mars"} population goal" aria-valuenow="${p.population}" aria-valuemin="0" aria-valuemax="${Math.max(p.target, p.population)}"><span style="width:${Math.min(100, p.population / p.target * 100)}%"></span><i style="left:${Math.min(99, p.housing / p.target * 100)}%" title="Completed housing: ${p.housing}"></i></div>
+      <p class="faint">Housing ${p.housing}${p.pendingHousing ? ` + ${p.pendingHousing} under construction` : ""} · safe sols ${p.safeStreak} / ${diff.streak}</p>
+      <p>${esc(p.next)}</p>
+      ${p.founded ? `<p class="faint">At ${p.target} crew, today's completed production: food ${fmtSigned(p.targetNet.food)}, water ${fmtSigned(p.targetNet.water)}, oxygen ${fmtSigned(p.targetNet.oxygen)} / sol. Power ${fmt(p.targetPower.generation)} gen / ${fmt(p.targetPower.demand)} draw; stored energy is a buffer, not generation.</p>` : ""}
+    </section>`).join("")}</div>
+    <p class="muted">Fleet ${brief.fleet.ready} / ${brief.fleet.target}${brief.fleet.pending ? `; ${brief.fleet.pending} building (not counted yet)` : ""}. Research ${brief.research.unlocked} / ${brief.research.target}; capstone ${brief.research.capstone ? "complete" : "still needed"}. Target-population estimates hold weather and modules fixed.</p>
+    <div class="inline"><button type="button" class="texty" data-act="modal" data-id="earth">Plan crew & exports</button><button type="button" class="texty" data-act="modal" data-id="tech">Open research</button></div>
+    <div class="section-label">Charter checklist</div>`;
+  }
+
+  private crewPlannerHTML(game: GameState): string {
+    const capacities = (["luna", "mars"] as const).map(world => crewCapacity(game, world));
+    const plans = capacities.map(c => game.ships.flatMap(s => {
+      const p = crewTransferPlan(game, s.id, c.world);
+      return p?.ready ? [p] : [];
+    }).sort((a, b) => b.passengers - a.passengers || a.cost - b.cost)[0]);
+    return `<details class="crew-planner" ${plans.some(Boolean) ? "open" : ""}><summary>Crew transfer planner</summary>
+      <div class="population-roadmap">${capacities.map((c, i) => {
+        const p = plans[i];
+        return `<section><div class="rowline"><b>${c.world === "luna" ? "Luna" : "Mars"}</b><span>${c.population} / ${c.target} crew</span></div>
+          <p>Support for ${c.additional} more toward the goal · ${c.reservedPassengers} passengers aboard or inbound.</p>
+          <p class="muted">${esc(c.blocker ?? `Completed housing ${c.housing}; current production and power cover these additional crew.`)}</p>
+          ${p ? `<p>${esc(p.shipName)} · ${p.passengers} passengers · ${fmt(p.cost)} cr departure cost · estimated arrival sol ${p.arrivalSol} · ${(p.risk * 100).toFixed(1)}% incident risk.</p><button type="button" class="texty" data-act="prepare-crew" data-id="${esc(p.shipId)}" data-world="${c.world}">Prepare ${c.world === "luna" ? "Luna" : "Mars"} crew transfer</button>` : c.additional ? `<p class="muted">No ready Earth hull. Sell loaded cargo or return a suitable empty hull to Earth; keep the founding ship for Mars.</p>` : ""}
+        </section>`;
+      }).join("")}</div>
+      <p class="muted">Alternative manifests, not orders. Completed housing and today's production only; conditions can change before arrival. Paid hiring happens at departure, and passengers join the outpost only after disembarking. These are one-way legs; plan return fuel separately.</p>
+    </details>`;
+  }
+
+  private operationsHTML(game: GameState, brief: OperationsBrief): string {
+    const ready = brief.exports.filter(p => p.ready);
+    const dockedSales = game.ships.filter(s => s.loc === "earth" && !s.mission && CARGO_IDS.some(k => s.cargo[k] > 0));
+    return `<section class="operations-brief" aria-label="Operations brief">
+      <div class="section-label">Cash & exports</div>
+      <div class="cash-metrics"><div><span class="faint">Cash balance</span><b class="${brief.cash.balance < 0 ? "warn" : "good"}">${fmt(brief.cash.balance)} cr</b></div><div><span class="faint">Available with credit line</span><b>${fmt(brief.cash.spendable)} cr</b></div><div><span class="faint">Estimated debt charge</span><b class="${brief.cash.debtFee ? "warn" : ""}">${fmt(brief.cash.debtFee)} cr</b></div></div>
+      <p>${esc(brief.cash.next)}</p>
+      ${dockedSales.map(s => `<p class="good">${esc(s.name)} has cargo at Earth worth ${fmt(CARGO_IDS.reduce((sum, k) => sum + s.cargo[k] * sellPrice(game, k), 0))} cr at posted prices. <button type="button" class="texty" data-act="review-ship" data-id="${esc(s.id)}">Review cargo sale</button></p>`).join("")}
+      <div class="trade-flow"><span>Extract on Luna</span><span aria-hidden="true">→</span><span>Load & fly</span><span aria-hidden="true">→</span><span>Sell at Earth</span></div>
+      <p>${esc(brief.exportNext)}</p>
+      ${ready.length ? ready.map(p => `<div class="export-option">
+        <div class="rowline"><b>${esc(p.shipName)}</b><span>${p.kilograms} kg · ${fmt(p.sale)} cr gross sale</span></div>
+        <p class="faint">${p.from === "earth" ? "Earth → Luna → Earth" : "Luna → Earth"} · estimated sale sol ${p.saleSol} · ${p.fuelBurn} t fuel burn · ${fmt(p.cashOutlay)} cr new departure outlay · incident risk ${p.legRisks.map(r => `${(r * 100).toFixed(1)}%`).join(" / ")} per leg.</p>
+        <button type="button" class="texty" data-act="prepare-export" data-id="${esc(p.shipId)}">Prepare ${p.from === "earth" ? "pickup run" : "export manifest"}</button>
+      </div>`).join("") : `<p class="faint">${brief.exports.map(p => `${p.shipName}: ${p.blocker}`).map(esc).join(" ") || "No idle Earth or Luna hull is available for an export."}</p>`}
+      ${ready.length ? `<details class="estimate-assumptions"><summary>Estimate assumptions</summary><p class="faint">Options are alternatives, not reserved cargo. Uses stock already present, not future production. Weather and technology stay fixed for planning. Gross sale is not profit: existing fuel, extraction costs and possible transit losses are not deducted. A pickup run still needs its return manifest at Luna.</p></details>` : ""}
+      ${game.contract ? `<p class="warn">An open quota may pay more than a direct sale. Check the quota before selling its cargo.</p>` : ""}
+    </section>`;
+  }
+
   private fleetHTML(game: GameState): string {
     if (!this.ui.shipId || !game.ships.some((s) => s.id === this.ui.shipId)) {
       const first = game.ships[0];
@@ -1058,7 +1159,8 @@ export class GameApp {
         return `<button type="button" class="ship ${s.id === this.ui.shipId ? "on" : ""}" data-act="ship" data-id="${s.id}">
           <b>${esc(s.name)}</b> <span class="faint">${SHIPS[s.cls].name}</span>
           <div class="rowline"><span>${esc(where)}</span><span>crew ${s.crew}</span></div>
-          <div class="hull"><span style="width:${Math.max(4, s.hull)}%"></span></div>
+          <div class="rowline"><span>Integrity</span><span>${Math.round(shipIntegrity(s))}%</span></div>
+          <div class="hull" role="progressbar" aria-label="${esc(s.name)} integrity" aria-valuenow="${Math.round(shipIntegrity(s))}" aria-valuemin="0" aria-valuemax="100"><span style="width:${shipIntegrity(s)}%"></span></div>
         </button>`;
       })
       .join("");
@@ -1068,10 +1170,10 @@ export class GameApp {
     return `<div class="fleet"><div><div class="section-label">Hulls</div>${list}${yards || ""}</div><div>${this.draftHTML(game)}</div></div>`;
   }
 
-  private ensureDraft(game: GameState, ship: Ship): void {
+  private ensureDraft(_game: GameState, ship: Ship): void {
     this.ui.shipId = ship.id;
-    const dest: LocationId = ship.loc === "mars" ? "earth" : ship.loc === "luna" ? "earth" : game.worlds.mars.founded ? "mars" : "mars";
-    this.ui.draft = { dest: ship.loc === "transit" ? "earth" : dest, cargo: { ...ship.cargo }, fuel: ship.fuel, crew: ship.crew };
+    this.ui.draft = initialLaunchDraft(ship);
+    this.draftBasis = shipManifestKey(ship);
   }
 
   private draftHTML(game: GameState): string {
@@ -1087,37 +1189,45 @@ export class GameApp {
     const dests: LocationId[] = ["earth", "luna", "mars"].filter((d) => d !== from) as LocationId[];
     const sliders = CARGO_IDS.map((k) => {
       const max = this.cargoMax(game, ship, draft, k);
-      return `<label class="slider">${RESOURCE_META[k].label}<input type="range" min="0" max="${Math.max(0, Math.floor(max))}" step="1" value="${Math.floor(draft.cargo[k] ?? 0)}" data-cargo="${k}"><span>${fmt(draft.cargo[k] ?? 0)}</span></label>`;
+      return `<label class="slider">${RESOURCE_META[k].label}<input type="range" min="0" max="${Math.max(Math.ceil(draft.cargo[k]), Math.floor(max))}" step="0.01" value="${draft.cargo[k]}" data-cargo="${k}"><span>${fmt(draft.cargo[k])}</span></label>`;
     }).join("");
-    const fuelMax = from === "earth" ? def.fuel : Math.min(def.fuel, ship.fuel + game.worlds[from].stock.propellant);
+    const fuelMax = fuelLimit(game, ship, draft);
     const crewMax = from === "earth" ? def.crew : Math.min(def.crew, ship.crew + Math.max(0, game.worlds[from].pop - 2));
     const founding = ship.cls === "colony" && draft.dest !== "earth" && !game.worlds[draft.dest].founded;
+    const trade = exportPlan(game, ship.id);
+    const service = previewShipRepair(game, ship.id);
+    const arrival = crewArrivalAdvice(game, ship.id);
+    const crewReturn = crewReturnPlan(game, ship.id);
+    const departureBlocker = crewDepartureBlocker(game, ship.id, draft);
     return `<h3 style="margin-top:0">${esc(ship.name)}</h3>
-      <p class="muted">${esc(def.blurb)} Hull ${Math.round(ship.hull)}. Bay ${fmt(CARGO_IDS.reduce((s, k) => s + (draft.cargo[k] ?? 0), 0))} / ${def.cargo}.</p>
+      <p class="muted">${esc(def.blurb)} Integrity ${Math.round(shipIntegrity(ship))}% (${fmt(ship.hull)} / ${def.hull} hull).</p>
+      ${ship.hull < def.hull ? `<section class="ship-service" aria-label="Dock repair"><div class="rowline"><b>Dock repair</b><span>+${fmt(service.restored)} hull · ${fmt(service.cost)} cr</span></div><p class="muted">${service.metals} t repair metal${from === "earth" ? " bought at current Earth prices" : " from ground stores"}; labour included. Hull after patch ${fmt(service.hullAfter)} / ${def.hull}.</p>${service.ok ? "" : `<p class="warn">${esc(service.reason ?? "Repair unavailable.")}</p>`}<button type="button" class="texty" data-act="repair-ship" ${service.ok ? "" : "disabled"}>Repair hull · ${fmt(service.cost)} cr</button></section>` : ""}
+      ${trade?.ready ? `<p class="faint">Export opportunity: ${trade.kilograms} kg helium-3, ${fmt(trade.sale)} cr gross at Earth. <button type="button" class="texty" data-act="prepare-export" data-id="${esc(ship.id)}">Prepare ${trade.from === "earth" ? "pickup run" : "export manifest"}</button></p>` : ""}
+      ${crewReturn?.ready && ship.cls === "colony" ? `<p class="muted">Outposts have unreserved crew capacity. <button type="button" class="texty" data-act="prepare-crew-return" data-id="${esc(ship.id)}">Prepare return for crew</button></p>` : ""}
+      <p>On board: ${fmt(CARGO_IDS.reduce((s, k) => s + ship.cargo[k], 0))} / ${def.cargo} bay · tank ${fmt(ship.fuel)} t · crew ${ship.crew}.</p>
+      ${from !== "earth" && arrival.passengers ? `<p class="${arrival.ready ? "good" : "warn"}">${arrival.passengers} passenger${arrival.passengers === 1 ? "" : "s"} would bring the outpost to ${arrival.populationAfter} crew / ${arrival.housing} completed berths. ${arrival.ready ? "Current production and power cover them; one pilot stays aboard." : esc(arrival.blocker ?? "Check life support before landing crew.")}</p>` : ""}
+      <p id="manifest-read">Planned departure: ${fmt(CARGO_IDS.reduce((s, k) => s + draft.cargo[k], 0))} / ${def.cargo} bay.</p>
       <label class="slider">Destination
         <select data-dest="1">${dests.map((d) => `<option value="${d}" ${draft.dest === d ? "selected" : ""}>${d}</option>`).join("")}</select>
         <span></span>
       </label>
       ${sliders}
-      <label class="slider">Fuel<input type="range" min="0" max="${Math.floor(fuelMax)}" step="1" value="${Math.floor(draft.fuel)}" data-fuel="1"><span>${fmt(draft.fuel)}</span></label>
+      <label class="slider">Fuel<input type="range" min="0" max="${Math.max(Math.ceil(draft.fuel), Math.floor(fuelMax))}" step="0.01" value="${draft.fuel}" data-fuel="1"><span>${fmt(draft.fuel)}</span></label>
       <label class="slider">Crew<input type="range" min="1" max="${Math.max(1, Math.floor(crewMax))}" step="1" value="${Math.floor(draft.crew)}" data-crew="1"><span>${fmt(draft.crew)}</span></label>
-      <p id="launch-read" class="${preview.ok ? "good" : "bad"}">${preview.ok ? `${preview.turns} sols · burn ${preview.burn} t · risk ${Math.round(preview.risk * 100)}% · ${preview.cost >= 0 ? "cost" : "credit"} ${fmt(Math.abs(preview.cost))} cr${preview.founding ? " · founding flight" : ""}` : esc(preview.reason ?? "Cannot launch")}</p>
+      <p id="launch-read" class="decision-read ${preview.ok ? "good" : "bad"}" aria-live="polite">${esc(launchSummary(game, ship, draft))}</p>
+      <p id="crew-departure-read" class="warn" aria-live="polite" ${departureBlocker ? "" : "hidden"}>${departureBlocker ? esc(departureBlocker) : ""}</p>
+      ${quotaReady(game, ship) ? `<p class="warn">This cargo meets the open quota. Deliver for ${fmt(game.contract!.reward)} cr before selling it.</p>` : ""}
       <div class="inline">
         <button type="button" class="btn primary" data-act="launch" ${preview.ok ? "" : "disabled"}>Launch</button>
         ${founding ? `<button type="button" class="texty" data-act="kit">Founding kit</button>` : ""}
-        ${from !== "earth" ? `<button type="button" class="texty" data-act="unload">Unload</button><button type="button" class="texty" data-act="fueloff">Offload fuel</button><button type="button" class="texty" data-act="disembark">Disembark</button>` : `<button type="button" class="texty" data-act="sell">Sell cargo</button>`}
-        ${from === "earth" && game.contract ? `<button type="button" class="texty" data-act="deliver">Deliver quota</button>` : ""}
+        ${from !== "earth" ? `<button type="button" class="texty" data-act="unload">Unload</button><button type="button" class="texty" data-act="fueloff">Offload fuel</button><button type="button" class="texty" data-act="disembark" ${arrival.eligible ? "" : "disabled"}>${arrival.ready ? `Disembark ${arrival.passengers} crew` : "Review crew landing"}</button>` : `<button type="button" class="texty" data-act="sell">Sell cargo</button>`}
+        ${from === "earth" && game.contract ? `<button type="button" class="${quotaReady(game, ship) ? "btn primary" : "texty"}" data-act="deliver" ${quotaReady(game, ship) ? "" : "disabled"}>Deliver quota</button>` : ""}
       </div>
       ${from !== "earth" ? `<div class="section-label">Lay down a hull here</div>${SHIP_CLASSES.map((cls) => `<button type="button" class="texty" data-act="commission" data-id="${cls}" data-loc="${from}">${SHIPS[cls].name}</button>`).join(" ")}` : ""}`;
   }
 
   private cargoMax(game: GameState, ship: Ship, draft: LaunchDraft, k: CargoId): number {
-    const cap = SHIPS[ship.cls].cargo;
-    const used = CARGO_IDS.reduce((s, id) => s + (draft.cargo[id] ?? 0), 0);
-    const remain = cap - used;
-    let ceiling = 999;
-    if (ship.loc !== "earth" && ship.loc !== "transit") ceiling = ship.cargo[k] + game.worlds[ship.loc].stock[k];
-    return Math.max(0, Math.min(ceiling, (draft.cargo[k] ?? 0) + remain));
+    return cargoLimit(game, ship, draft, k);
   }
 
   private onInput(ev: Event): void {
@@ -1142,11 +1252,22 @@ export class GameApp {
     const preview = previewLaunch(game, ship.id, draft);
     const read = this.root.querySelector("#launch-read");
     if (read) {
-      read.className = preview.ok ? "good" : "bad";
-      read.textContent = preview.ok
-        ? `${preview.turns} sols · burn ${preview.burn} t · risk ${Math.round(preview.risk * 100)}% · ${preview.cost >= 0 ? "cost" : "credit"} ${fmt(Math.abs(preview.cost))} cr${preview.founding ? " · founding flight" : ""}`
-        : (preview.reason ?? "Cannot launch");
+      read.className = `decision-read ${preview.ok ? "good" : "bad"}`;
+      read.textContent = launchSummary(game, ship, draft);
     }
+    const manifest = this.root.querySelector("#manifest-read");
+    if (manifest) manifest.textContent = `Planned departure: ${fmt(CARGO_IDS.reduce((sum, k) => sum + draft.cargo[k], 0))} / ${SHIPS[ship.cls].cargo} bay.`;
+    const departureRead = this.root.querySelector<HTMLElement>("#crew-departure-read");
+    if (departureRead) {
+      const blocker = crewDepartureBlocker(game, ship.id, draft);
+      departureRead.hidden = !blocker;
+      departureRead.textContent = blocker ?? "";
+    }
+    this.root.querySelectorAll<HTMLInputElement>("[data-cargo], [data-fuel]").forEach(slider => {
+      const value = slider.dataset.cargo ? draft.cargo[slider.dataset.cargo as CargoId] : draft.fuel;
+      const limit = slider.dataset.cargo ? cargoLimit(game, ship, draft, slider.dataset.cargo as CargoId) : fuelLimit(game, ship, draft);
+      slider.max = String(Math.max(Math.ceil(value), Math.floor(limit)));
+    });
     const span = input.parentElement?.querySelector("span");
     if (span && (input.dataset.cargo || input.dataset.fuel || input.dataset.crew)) span.textContent = fmt(Number(input.value));
     const launch = this.root.querySelector("[data-act='launch']") as HTMLButtonElement | null;
@@ -1157,6 +1278,16 @@ export class GameApp {
     if (this.ui.cinematic) return;
     const el = ev.target as HTMLSelectElement;
     if (el.hasAttribute("data-music-track")) { this.music.setTrack(el.value); this.paint(); return; }
+    if (el.dataset.route) {
+      if (el.dataset.route === "from" && el.value in LOCATION_NAMES) {
+        this.ui.route.from = el.value as LocationId;
+        if (this.ui.route.to === this.ui.route.from) this.ui.route.to = this.ui.route.from === "earth" ? "mars" : "earth";
+      } else if (el.dataset.route === "to" && el.value in LOCATION_NAMES && el.value !== this.ui.route.from) this.ui.route.to = el.value as LocationId;
+      else if (el.dataset.route === "cls" && SHIP_CLASSES.includes(el.value as Ship["cls"])) this.ui.route.cls = el.value as Ship["cls"];
+      this.paint();
+      this.root.querySelector<HTMLSelectElement>(`[data-route='${el.dataset.route}']`)?.focus();
+      return;
+    }
     if (!el.dataset.dest || !this.ui.draft) return;
     this.ui.draft.dest = el.value as LocationId;
     this.paint();
@@ -1169,6 +1300,22 @@ export class GameApp {
       return;
     }
     const game = this.game;
+    if (act === "chart-ship" && game && el.dataset.id) {
+      const ship = game.ships.find(s => s.id === el.dataset.id);
+      if (ship) { this.ensureDraft(game, ship); this.ui.modal = "fleet"; this.paint(); }
+      return;
+    }
+    if (act === "route-fleet" && game) {
+      const route = this.ui.route;
+      const ship = availableRouteHull(game, route);
+      if (ship) {
+        this.ensureDraft(game, ship);
+        if (this.ui.draft) this.ui.draft.dest = route.to;
+        this.ui.modal = "fleet";
+        this.paint();
+      }
+      return;
+    }
     if (act === "diff") {
       this.ui.diff = (el.dataset.id as Difficulty) ?? "charter";
       this.paintTitle();
@@ -1316,14 +1463,61 @@ export class GameApp {
       this.act(cancelBuilding(game, this.ui.view, this.ui.selected.q, this.ui.selected.r));
       return;
     }
-    if (act === "ship" && el.dataset.id) {
+    if ((act === "ship" || act === "review-ship") && el.dataset.id) {
       const ship = game.ships.find((s) => s.id === el.dataset.id);
       if (ship) this.ensureDraft(game, ship);
+      if (ship && act === "review-ship") this.ui.modal = "fleet";
       this.paint();
       return;
     }
+    if (act === "prepare-export" && el.dataset.id) {
+      const plan = exportPlan(game, el.dataset.id);
+      const ship = game.ships.find(s => s.id === el.dataset.id);
+      if (!plan?.ready || !ship) { this.toast(plan?.blocker ?? "That export is no longer available."); return; }
+      this.ensureDraft(game, ship);
+      this.ui.draft = structuredClone(plan.draft);
+      this.ui.modal = "fleet";
+      this.paint();
+      this.toast("Manifest prepared. No ship launched and no cargo sold.");
+      return;
+    }
+    if (act === "prepare-crew" && el.dataset.id && (el.dataset.world === "luna" || el.dataset.world === "mars")) {
+      const plan = crewTransferPlan(game, el.dataset.id, el.dataset.world);
+      const ship = game.ships.find(s => s.id === el.dataset.id);
+      if (!plan?.ready || !ship) { this.toast(plan?.blocker ?? "That crew transfer is no longer available."); return; }
+      this.ensureDraft(game, ship);
+      this.ui.draft = structuredClone(plan.draft);
+      this.ui.modal = "fleet";
+      this.paint();
+      this.toast("Crew manifest prepared. No hiring, departure or landing yet.");
+      return;
+    }
+    if (act === "repair-ship" && this.ui.shipId) return this.act(repairShip(game, this.ui.shipId));
+    if (act === "prepare-crew-return" && el.dataset.id) {
+      const plan = crewReturnPlan(game, el.dataset.id);
+      const ship = game.ships.find(s => s.id === el.dataset.id);
+      if (!plan?.ready || !ship) { this.toast(plan?.blocker ?? "That return is no longer available."); return; }
+      this.ensureDraft(game, ship);
+      this.ui.draft = structuredClone(plan.draft);
+      this.paint();
+      this.toast("Return manifest prepared. No departure yet.");
+      return;
+    }
     if (act === "launch" && this.ui.shipId && this.ui.draft) {
-      this.act(launchShip(game, this.ui.shipId, this.ui.draft));
+      const shipId = this.ui.shipId;
+      const draft = structuredClone(this.ui.draft);
+      const blocker = crewDepartureBlocker(game, shipId, draft);
+      if (blocker && previewLaunch(game, shipId, draft).ok) {
+        this.ui.confirm = {
+          title: "Review passenger departure",
+          body: `${blocker} ${draft.crew - 1} passenger${draft.crew === 2 ? " is" : "s are"} planned for ${LOCATION_NAMES[draft.dest]}. Conditions can change before arrival; a separate disembarkation is still required.`,
+          yes: "Launch anyway",
+          go: () => { this.ui.modal = "fleet"; if (this.game === game) this.act(launchShip(game, shipId, draft)); },
+        };
+        this.ui.confirmReturn = "fleet";
+        this.ui.modal = "confirm";
+        this.paint();
+      } else this.act(launchShip(game, shipId, draft));
       return;
     }
     if (act === "kit" && this.ui.draft && this.ui.shipId) {
@@ -1349,7 +1543,22 @@ export class GameApp {
     if (act === "unload" && this.ui.shipId) return this.act(unloadShip(game, this.ui.shipId));
     if (act === "sell" && this.ui.shipId) return this.act(sellCargo(game, this.ui.shipId));
     if (act === "fueloff" && this.ui.shipId) return this.act(offloadFuel(game, this.ui.shipId));
-    if (act === "disembark" && this.ui.shipId) return this.act(disembark(game, this.ui.shipId));
+    if (act === "disembark" && this.ui.shipId) {
+      const shipId = this.ui.shipId;
+      const arrival = crewArrivalAdvice(game, shipId);
+      if (!arrival.eligible) { this.toast(arrival.blocker ?? "Cannot disembark.", true); return; }
+      if (arrival.ready) return this.act(disembark(game, shipId));
+      this.ui.confirm = {
+        title: "Crew landing risk",
+        body: `${arrival.blocker} ${arrival.passengers} passenger${arrival.passengers === 1 ? "" : "s"} would raise population to ${arrival.populationAfter} with ${arrival.housing} completed berths. This may cause shortages or overcrowding.`,
+        yes: "Disembark anyway",
+        go: () => { this.ui.modal = "fleet"; this.act(disembark(game, shipId)); },
+      };
+      this.ui.confirmReturn = "fleet";
+      this.ui.modal = "confirm";
+      this.paint();
+      return;
+    }
     if (act === "deliver" && this.ui.shipId) return this.act(fulfillContract(game, this.ui.shipId));
     if (act === "commission") {
       this.act(commissionShip(game, (el.dataset.id as Ship["cls"]) ?? "courier", (el.dataset.loc as LocationId) ?? "earth"));
@@ -1416,7 +1625,7 @@ export class GameApp {
       const slot = el.dataset.id as SlotId;
       const next = loadFrom(slot);
       if (!next) {
-        this.toast("That slot is empty.");
+        this.toast("That slot is empty or damaged. Its stored data has not been deleted.");
         return;
       }
       this.ui.confirm = {
@@ -1544,7 +1753,7 @@ export class GameApp {
     const mx = ev.clientX - rect.left;
     const my = ev.clientY - rect.top;
     if (this.ui.view === "system") {
-      const hit = pickBody(mx, my, this.geom(), this.game.turn, performance.now(), this.meta.anim);
+      const hit = pickBody(mx, my, this.geom());
       if (hit === "earth") {
         this.ui.modal = "earth";
         this.paint();

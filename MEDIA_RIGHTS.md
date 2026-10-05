@@ -1,5 +1,32 @@
 # Media rights and provenance
 
+## Version 1.1.0 visual update
+
+Four new illustrative assets were generated with the built-in OpenAI image
+tool on October 5, 2026: `proxima-system-atlas-v1.png`, `lunar-terrain-v2.png`,
+`mars-terrain-v2.png`, and `proxima-aresfab-mars-v2.png`, all under `public/assets/`.
+The planets/ship atlas and two terrain illustrations used no external reference
+images. The Mars foundry used the existing industry atlas and new Mars terrain
+as architectural/style and material references. It is fictional illustrative
+equipment, not a real fabrication design or evidence of deployment.
+
+The foundry changes only the Mars Aresfab sprite. Luna and the other industry
+atlas cells remain unchanged. Old artwork and recording bytes are preserved.
+The owner authorized publication of these updates on October 5, 2026. The
+asset inventory records exact bytes; generation provenance and owner release
+authorization do not establish independent legal clearance or exclusive rights.
+The original inherited recording/asset terms below remain unchanged. License
+1.1's educational exemption does not override independently licensed media.
+
+| New file | SHA-256 |
+|---|---|
+| `public/assets/proxima-system-atlas-v1.png` | `53d0cc2c8266b2a7cd40d0156bd1e057e5e668c4349f5c3c904da7720704cdc2` |
+| `public/assets/lunar-terrain-v2.png` | `b7612630b31782fdcdb9dec8c484bdeb1c8cb282a1b57b7c9fa68e346a85ac34` |
+| `public/assets/mars-terrain-v2.png` | `df80e407c92e43f2f2501fbf9254fd53bce890fe87f2caeb8a22d489feec773f` |
+| `public/assets/proxima-aresfab-mars-v2.png` | `5e84e7af8172d7e1e8f3abf12b636455931afb5300c258fb0206925191e2dcde` |
+
+## Inherited media notices
+
 Terrain/building atlases are inherited from the owner's Titans of Mars First City and Titans of Luna projects. Earlier grants and independent third-party notices are not revoked by this migration. Specialist, science and industry atlases and the Moon/Mars arrival illustrations are recorded in the retained project records as OpenAI/built-in ImageGen work dated September 21, 2026. The public asset inventory binds the actual bytes. Provider records and hashes are not independent legal clearance or proof of exclusive rights.
 
 These are fictional future structures and illustrations, not validated engineering, official SpaceX/Tesla art, endorsements or flight photographs. The game uses the revised lunar v2 arrival image; v1 is retained as a prior asset. Raw generation prompts, local paths and private agent receipts are not exported.

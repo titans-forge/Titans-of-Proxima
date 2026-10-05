@@ -1,12 +1,322 @@
 {
-  "schema": "forge_game_source_snapshot_v1",
+  "schema": "forge_game_source_snapshot_v2",
   "game": "Titans of Proxima",
-  "selected_source_sha256": "ba895bd25482b3c977202b6fdca69d17b1475cb022164d22338f601ef665af9d",
-  "runtime_files": [
+  "version": "1.1.0",
+  "recorded_date": "2026-10-05",
+  "release_id": "FG-LIC-20261005-PROXIMA-110",
+  "scope": "Current gameplay, public assets, build configuration and release scripts; excludes private records and dependencies",
+  "original_unchanged_claim": false,
+  "earlier_snapshot": "docs/licensing-history/2026-09-30-source-snapshot.json",
+  "files": [
     {
-      "path": "index.html",
-      "sha256": "ecfb898d230c7df183153ff4e21cd500d652fb0ad3119683a1ea587d1af29645",
-      "bytes": 423
+      "path": "src/audio/audio.test.ts",
+      "sha256": "0b316670dab2a2cd94485cd735e261e17ab45a189ecd533122dd7f230524b2e3",
+      "bytes": 5047
+    },
+    {
+      "path": "src/audio/audio.ts",
+      "sha256": "6b72c5c17c675831be5091c92bde21a054a03a851d4a1397c92368a680a935f8",
+      "bytes": 3337
+    },
+    {
+      "path": "src/audio/soundtrack.ts",
+      "sha256": "03cd19838a0cbc7946d4f50104832b020445c2c7078c5b9a7a96c0862f900c52",
+      "bytes": 5190
+    },
+    {
+      "path": "src/core/actions.ts",
+      "sha256": "8d7906c3056f93b3a91c47cec02b9b3a5784ec9ee1ded80c7c181bcd43a1f3ba",
+      "bytes": 23736
+    },
+    {
+      "path": "src/core/buildingStatus.ts",
+      "sha256": "dc6182d2f975f43d106ccc3696d0a20e5ff65e8fca9d7c172f3ecf4c006db38a",
+      "bytes": 1450
+    },
+    {
+      "path": "src/core/campaign.test.ts",
+      "sha256": "cded7b9ba9a0d477e2f652f892cce981e47f32ac169e210724ad19b014e07fe8",
+      "bytes": 5206
+    },
+    {
+      "path": "src/core/campaignEconomyPolicy.test.ts",
+      "sha256": "63eac9354b00e2c67bfca01fbad1de6b6425945c62493fd71799ef4e2064de3a",
+      "bytes": 14250
+    },
+    {
+      "path": "src/core/campaignEconomyPolicy.ts",
+      "sha256": "ee74e1ad0b32ab784658432f7afdcda7f03384e3944c56c2eea713d5748479f9",
+      "bytes": 15270
+    },
+    {
+      "path": "src/core/campaignEconomyStudy.test.ts",
+      "sha256": "9081ca14a815a35acc49b3f77301b9e7b6e8ec8b70e833800ad502fb72862e51",
+      "bytes": 2872
+    },
+    {
+      "path": "src/core/campaignRecoveryPolicy.test.ts",
+      "sha256": "b5759667ea52068c9cdba6d399cab661dc97c2253242ed8ef87d975978a6c1c5",
+      "bytes": 6624
+    },
+    {
+      "path": "src/core/campaignRecoveryPolicy.ts",
+      "sha256": "873a67b2050b347e862aaefe4c996f5541a0498f9d0986e4a66bc38c51ae46c4",
+      "bytes": 5357
+    },
+    {
+      "path": "src/core/campaignStudy.test.ts",
+      "sha256": "fabcda306f1a33d002bb340641d756278163140e46105c4b51fec5b2f71061ed",
+      "bytes": 10458
+    },
+    {
+      "path": "src/core/campaignStudy.ts",
+      "sha256": "3d051832835243c8120efe4c3a0e466d71f629228fbb099aa7ff5247f35f4487",
+      "bytes": 19012
+    },
+    {
+      "path": "src/core/campaignStudyPolicy.ts",
+      "sha256": "c71e9285aca6391138c655f3b3e76f9b819d8bd3731318ec53b6fc4c7ce443cd",
+      "bytes": 7524
+    },
+    {
+      "path": "src/core/crewTransport.test.ts",
+      "sha256": "8ff910855c03574103b85ca2df8d1d426cb640b862173eaf24d9da33f551f4b3",
+      "bytes": 7554
+    },
+    {
+      "path": "src/core/crewTransport.ts",
+      "sha256": "07757ec6c56776a4197a4d7427bb209e85676f243377163aa87e973c0808aeac",
+      "bytes": 8432
+    },
+    {
+      "path": "src/core/data.ts",
+      "sha256": "e3a02431f81276d02215db2138860e7559276b4f5b99f95565557ab30157ea85",
+      "bytes": 16980
+    },
+    {
+      "path": "src/core/events.regression.test.ts",
+      "sha256": "a56fa8f9de0386f8e46e261c4f8f989313bc7f6c45e5b666baaf1ee1097aaf24",
+      "bytes": 6776
+    },
+    {
+      "path": "src/core/events.ts",
+      "sha256": "731ac4a6d8162f5f2bd17b91ac26c4fe64b909776e44e3e043281fa54b8e6a13",
+      "bytes": 20782
+    },
+    {
+      "path": "src/core/fieldGuide.test.ts",
+      "sha256": "814d7f2724e3ae50d8a1f63dc4b5cb9105ff064db6cce7fded0daae0662e2401",
+      "bytes": 2166
+    },
+    {
+      "path": "src/core/fieldGuide.ts",
+      "sha256": "2e9eeca3c965803a4e6d25e9afc0bcf3b9a35aa0f7443932c470d796c7366b44",
+      "bytes": 17030
+    },
+    {
+      "path": "src/core/format.ts",
+      "sha256": "3b9e7a36371d211ef27662b7c771f558401fdfc76ff36e2795fcf6dcf7558601",
+      "bytes": 586
+    },
+    {
+      "path": "src/core/guidance.test.ts",
+      "sha256": "361cac4ae5b0978be5637d712ad08dbb25f0444606d16b33f6406aede8535315",
+      "bytes": 3512
+    },
+    {
+      "path": "src/core/guidance.ts",
+      "sha256": "559195317e26b229e5cbeba275760ecf2d959102413d05e71824cc10a4131905",
+      "bytes": 4274
+    },
+    {
+      "path": "src/core/hex.ts",
+      "sha256": "17752295416be7998fa0470a8ea67987ec9f2881153919125e4c5a0d8b65f9ed",
+      "bytes": 1973
+    },
+    {
+      "path": "src/core/industry.test.ts",
+      "sha256": "e89f7fb0df30d0fe8f1b94f3cf4377fc6913db572e9d0be055dcbb3420d3871c",
+      "bytes": 9384
+    },
+    {
+      "path": "src/core/launch.test.ts",
+      "sha256": "5f204cc96fa28f77cef9d8b7352967faa4b4b293ef38be24bb1944fefaa5d41d",
+      "bytes": 2619
+    },
+    {
+      "path": "src/core/mapgen.ts",
+      "sha256": "8fae0d251fb48841d0252fa44fc559d0d67a6b63c9d3b165c9572d9b4ae39838",
+      "bytes": 4039
+    },
+    {
+      "path": "src/core/mechanics.test.ts",
+      "sha256": "54042c89432861d5715b94c4dedc624a8d13911e8ba0191f93fde4ec6d1f933e",
+      "bytes": 4392
+    },
+    {
+      "path": "src/core/operations.test.ts",
+      "sha256": "8d97dd771dae43056a125be6bd68d2fc7d3e0070cc0b27be16521664bd0c70de",
+      "bytes": 6477
+    },
+    {
+      "path": "src/core/operations.ts",
+      "sha256": "28995a2f06d923da6d8638b7ca198415457916b4547a0fe511cdf0654f4bd2ec",
+      "bytes": 8211
+    },
+    {
+      "path": "src/core/rng.ts",
+      "sha256": "48c425c0e1ec367595ebfb97185e9ce6e727879f5c1cfe09d5f92cf1ff114103",
+      "bytes": 781
+    },
+    {
+      "path": "src/core/routeIntel.test.ts",
+      "sha256": "a58a918a8dc20e273414fc2fb1390aa7787f29804c143765ddc292320201246c",
+      "bytes": 2263
+    },
+    {
+      "path": "src/core/routeIntel.ts",
+      "sha256": "4f9de8b5471caebf2c7e99f9150b32eb85e8608940aff0639ed3a1b70604fa41",
+      "bytes": 2268
+    },
+    {
+      "path": "src/core/routes.ts",
+      "sha256": "4c0479e1137e0034bebe9181660504feb7399e5f30432d5212b7e741bd8fd10b",
+      "bytes": 2396
+    },
+    {
+      "path": "src/core/save.regression.test.ts",
+      "sha256": "8f1dad58652dc5f48115f60654d45c314cf5e46caf6e8562da9311ea84a2bdfe",
+      "bytes": 7123
+    },
+    {
+      "path": "src/core/save.ts",
+      "sha256": "6be11af7431d7c6b6d850cb2bc066c29f178fc7ba991bd90b89c660b0c0fa6bf",
+      "bytes": 7442
+    },
+    {
+      "path": "src/core/shipService.test.ts",
+      "sha256": "a4a6a8083e631f8bfa8f7c7db2f1fc988a513944f458460436120fbf3f5002d2",
+      "bytes": 23444
+    },
+    {
+      "path": "src/core/shipService.ts",
+      "sha256": "47760a90c9fed3cf311b8936e8cf3e29c8f45a18429833c7926652920fd3bb74",
+      "bytes": 3714
+    },
+    {
+      "path": "src/core/sim.ts",
+      "sha256": "c0d1bee4f35ad46f6dbdee2d9adebc4d8f5533dee75c8627b2f82e5ae4fb9696",
+      "bytes": 31832
+    },
+    {
+      "path": "src/core/state.ts",
+      "sha256": "95b50cd179ab3b58c8c2f88834de9f6de89e9ae0f548c9adef6a51e6d1eb6eff",
+      "bytes": 4719
+    },
+    {
+      "path": "src/core/testAssert.ts",
+      "sha256": "853174c49cab9eabe0abc280e12bb2c3fc742310db418bf0df5a195c290c6efd",
+      "bytes": 899
+    },
+    {
+      "path": "src/core/types.ts",
+      "sha256": "aaff754dd121469415acd7a1be03f16c8c70b9e133187058fca6b40847269cb1",
+      "bytes": 4931
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "59d85a7f5c81e7083486dec262636fd46838dce8cad23071dc3d7164bdaf6eaa",
+      "bytes": 183
+    },
+    {
+      "path": "src/render/assets.ts",
+      "sha256": "e5a052249ab0c87b20c29bea1209af9d75a1d30a46f15c86539768f60c29b93e",
+      "bytes": 4104
+    },
+    {
+      "path": "src/render/camera.ts",
+      "sha256": "3b4ed8d389e233a4f77213090ca42be6f033dcfeb419bd0b7ec5d5df00123bc4",
+      "bytes": 1638
+    },
+    {
+      "path": "src/render/draw.ts",
+      "sha256": "97e270b2b1b37a1f547ab06c7d21fd24d4f08790366bbe8b95518340461a6173",
+      "bytes": 28230
+    },
+    {
+      "path": "src/render/moduleLayout.test.ts",
+      "sha256": "09b8b379dbada9e5d10414b396ba8e63d616de445846f8e1dfdc52cafcf7c1f3",
+      "bytes": 9470
+    },
+    {
+      "path": "src/render/moduleLayout.ts",
+      "sha256": "ecf07cef4033155acd7c743d41c6e1d944d3b65d8652b8e76503d3ed261c0e69",
+      "bytes": 4882
+    },
+    {
+      "path": "src/render/polish.test.ts",
+      "sha256": "cac794f90beb5507b056954a77743022cd31776852e0c698238fc966b7bdee34",
+      "bytes": 3168
+    },
+    {
+      "path": "src/render/systemChart.ts",
+      "sha256": "50fe3487c69dfcde61a428c54ecbff849b142b7b965b0e38599eb2997e8759f1",
+      "bytes": 4843
+    },
+    {
+      "path": "src/render/systemGeometry.test.ts",
+      "sha256": "8e7f8f73178c14bd1432e3004de0bf2e7cc55c3ba3c97e6cf2fc0affb2e5c06e",
+      "bytes": 2761
+    },
+    {
+      "path": "src/render/systemGeometry.ts",
+      "sha256": "1efaaae483974e22f1286a7ab2cef561d04a1d2c703ea9a959bb81f9823dcca0",
+      "bytes": 1920
+    },
+    {
+      "path": "src/render/terrainLayout.ts",
+      "sha256": "6465ac80bf0a4eaf5900a39d614467155a111c8a1661dff8360863d31905ff11",
+      "bytes": 602
+    },
+    {
+      "path": "src/selftest.ts",
+      "sha256": "ab158f0ac036251ce38ecf1f49515a70d06630856b8dbf67a6107bdf81c3c110",
+      "bytes": 7314
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "7fa91724752920f14cfca67951c3531b40132cdd1af75183f1ec94d67c4ae013",
+      "bytes": 22316
+    },
+    {
+      "path": "src/ui/app.ts",
+      "sha256": "a2c1951d57d5fe80204c54019f3834818fd3b1d2936b7e9c207dec1d1961db07",
+      "bytes": 102528
+    },
+    {
+      "path": "src/ui/cinematics.test.ts",
+      "sha256": "a80264cec33dcbc193db823e6853d57ac0c4f3d82e4824779e4f71d3e52de151",
+      "bytes": 1581
+    },
+    {
+      "path": "src/ui/cinematics.ts",
+      "sha256": "7aba9620325393d934ba518f800ad832e2aadc671f4a45ce68929f23bf2fd64d",
+      "bytes": 1109
+    },
+    {
+      "path": "src/ui/fleetDraft.test.ts",
+      "sha256": "8ed87fe3c5ba01a1600f036f0e4ae5cf0436e0cd33f7949dac154a74efaaf7be",
+      "bytes": 2755
+    },
+    {
+      "path": "src/ui/fleetDraft.ts",
+      "sha256": "36708f2fe2bcd7812c48cdb40764c440ebc514d6ba75c4e662ccc3665221bff9",
+      "bytes": 2912
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "bytes": 38
     },
     {
       "path": "public/assets/building-atlas-expansion.png",
@@ -29,14 +339,29 @@
       "bytes": 1387820
     },
     {
+      "path": "public/assets/lunar-terrain-v2.png",
+      "sha256": "b7612630b31782fdcdb9dec8c484bdeb1c8cb282a1b57b7c9fa68e346a85ac34",
+      "bytes": 3730173
+    },
+    {
       "path": "public/assets/lunar-terrain.png",
       "sha256": "745990f9b5cc8c3109b70d2fb2bc4e32e375f2d3525ab3ea78b3f93e90094e62",
       "bytes": 3760683
     },
     {
+      "path": "public/assets/mars-terrain-v2.png",
+      "sha256": "df80e407c92e43f2f2501fbf9254fd53bce890fe87f2caeb8a22d489feec773f",
+      "bytes": 3365367
+    },
+    {
       "path": "public/assets/mars-terrain.png",
       "sha256": "ba6ecdb988404c5f49c1a9e126869a4e8dac4de5124197681ad2ceafe79ec261",
       "bytes": 2771137
+    },
+    {
+      "path": "public/assets/proxima-aresfab-mars-v2.png",
+      "sha256": "5e84e7af8172d7e1e8f3abf12b636455931afb5300c258fb0206925191e2dcde",
+      "bytes": 1769917
     },
     {
       "path": "public/assets/proxima-industry-v1.png",
@@ -52,6 +377,11 @@
       "path": "public/assets/proxima-specialists-v1.png",
       "sha256": "be302907b6c71434adda648c746e5336691f3025d3fff3580d8150375492751b",
       "bytes": 1997068
+    },
+    {
+      "path": "public/assets/proxima-system-atlas-v1.png",
+      "sha256": "53d0cc2c8266b2a7cd40d0156bd1e057e5e668c4349f5c3c904da7720704cdc2",
+      "bytes": 1675543
     },
     {
       "path": "public/assets/starship-luna-arrival-v1.png",
@@ -99,167 +429,55 @@
       "bytes": 5414
     },
     {
-      "path": "src/audio/audio.test.ts",
-      "sha256": "0b316670dab2a2cd94485cd735e261e17ab45a189ecd533122dd7f230524b2e3",
-      "bytes": 5047
+      "path": "scripts/campaign-study.mjs",
+      "sha256": "7f8d2f0aea4b3aa922979d636599df5705b46fb0baa9e188999d97c9ae9cfa22",
+      "bytes": 3679
     },
     {
-      "path": "src/audio/audio.ts",
-      "sha256": "6b72c5c17c675831be5091c92bde21a054a03a851d4a1397c92368a680a935f8",
-      "bytes": 3337
+      "path": "scripts/release-inventory.mjs",
+      "sha256": "ec313129bf6e4363098651160c8a35f8e40d6e7e25a553250dc1df4c0289d77c",
+      "bytes": 2497
     },
     {
-      "path": "src/audio/soundtrack.ts",
-      "sha256": "03cd19838a0cbc7946d4f50104832b020445c2c7078c5b9a7a96c0862f900c52",
-      "bytes": 5190
+      "path": "scripts/serve.mjs",
+      "sha256": "a3e94c8f54abc64c94987694aa1d88f79c2c718ade255c8b33932c2dcf573b8f",
+      "bytes": 2201
     },
     {
-      "path": "src/core/actions.ts",
-      "sha256": "0ca26d305a107e002804ea7c07f8c3652f25cf846e32521c8eb453903abe4add",
-      "bytes": 23437
+      "path": "scripts/stage-release-licenses.mjs",
+      "sha256": "9bf146ab5b7b9349cadd93432a704471a6f6f0b680bbc2e9547cc9fdf1ec2cda",
+      "bytes": 4592
     },
     {
-      "path": "src/core/buildingStatus.ts",
-      "sha256": "dc6182d2f975f43d106ccc3696d0a20e5ff65e8fca9d7c172f3ecf4c006db38a",
-      "bytes": 1450
+      "path": "scripts/test.mjs",
+      "sha256": "e1130ce63cf6f3ea95ada5bbc9e3d5a37bc75a84a3e656a590013b79a711567d",
+      "bytes": 1147
     },
     {
-      "path": "src/core/campaign.test.ts",
-      "sha256": "cded7b9ba9a0d477e2f652f892cce981e47f32ac169e210724ad19b014e07fe8",
-      "bytes": 5206
+      "path": "index.html",
+      "sha256": "ecfb898d230c7df183153ff4e21cd500d652fb0ad3119683a1ea587d1af29645",
+      "bytes": 423
     },
     {
-      "path": "src/core/data.ts",
-      "sha256": "e3a02431f81276d02215db2138860e7559276b4f5b99f95565557ab30157ea85",
-      "bytes": 16980
+      "path": "package.json",
+      "sha256": "a662a09fd9be47378d233639a940e60a0fc0186568ac42b2d212039443216a93",
+      "bytes": 668
     },
     {
-      "path": "src/core/events.ts",
-      "sha256": "87e36cf3b03ec2881cdcd749aef6e06c9c89a0bff8199cc1254ac3dd36d94f80",
-      "bytes": 20587
+      "path": "package-lock.json",
+      "sha256": "dfbd2cff9c030adc3d30b40728fb06a2b4942a3dcbe9ed7615b57be6e233a851",
+      "bytes": 50649
     },
     {
-      "path": "src/core/fieldGuide.test.ts",
-      "sha256": "814d7f2724e3ae50d8a1f63dc4b5cb9105ff064db6cce7fded0daae0662e2401",
-      "bytes": 2166
+      "path": "tsconfig.json",
+      "sha256": "4311cefde0a07e0cc898f1d1c0a2e8b61ef81001771e444f76993aa5313ea5fc",
+      "bytes": 413
     },
     {
-      "path": "src/core/fieldGuide.ts",
-      "sha256": "2e9eeca3c965803a4e6d25e9afc0bcf3b9a35aa0f7443932c470d796c7366b44",
-      "bytes": 17030
-    },
-    {
-      "path": "src/core/format.ts",
-      "sha256": "3b9e7a36371d211ef27662b7c771f558401fdfc76ff36e2795fcf6dcf7558601",
-      "bytes": 586
-    },
-    {
-      "path": "src/core/hex.ts",
-      "sha256": "17752295416be7998fa0470a8ea67987ec9f2881153919125e4c5a0d8b65f9ed",
-      "bytes": 1973
-    },
-    {
-      "path": "src/core/industry.test.ts",
-      "sha256": "e89f7fb0df30d0fe8f1b94f3cf4377fc6913db572e9d0be055dcbb3420d3871c",
-      "bytes": 9384
-    },
-    {
-      "path": "src/core/mapgen.ts",
-      "sha256": "8fae0d251fb48841d0252fa44fc559d0d67a6b63c9d3b165c9572d9b4ae39838",
-      "bytes": 4039
-    },
-    {
-      "path": "src/core/mechanics.test.ts",
-      "sha256": "576403eabad782859361512ac5930b296a436cb37fe0dffde8333759e2e9e56e",
-      "bytes": 3614
-    },
-    {
-      "path": "src/core/rng.ts",
-      "sha256": "48c425c0e1ec367595ebfb97185e9ce6e727879f5c1cfe09d5f92cf1ff114103",
-      "bytes": 781
-    },
-    {
-      "path": "src/core/routes.ts",
-      "sha256": "4c0479e1137e0034bebe9181660504feb7399e5f30432d5212b7e741bd8fd10b",
-      "bytes": 2396
-    },
-    {
-      "path": "src/core/save.ts",
-      "sha256": "f16df4dabb02eccd8ef45aaf38bea77ce672ec8dfaf35865f00903abdedf06dc",
-      "bytes": 2081
-    },
-    {
-      "path": "src/core/sim.ts",
-      "sha256": "756e130e86ac43197e96ca604da301aa33a8c0fd35e56b43e866773fb7a72ba8",
-      "bytes": 31387
-    },
-    {
-      "path": "src/core/state.ts",
-      "sha256": "95b50cd179ab3b58c8c2f88834de9f6de89e9ae0f548c9adef6a51e6d1eb6eff",
-      "bytes": 4719
-    },
-    {
-      "path": "src/core/types.ts",
-      "sha256": "09e560ebe38e18c26fbc59de7a8f3eb7b406b7b8d6b584eaf32084610a9fa286",
-      "bytes": 4685
-    },
-    {
-      "path": "src/main.ts",
-      "sha256": "59d85a7f5c81e7083486dec262636fd46838dce8cad23071dc3d7164bdaf6eaa",
-      "bytes": 183
-    },
-    {
-      "path": "src/render/assets.ts",
-      "sha256": "39672cf944a59f28b31b2c6b5f0951b7b94b01a545f7a589a4a6d0182d26f1b7",
-      "bytes": 3730
-    },
-    {
-      "path": "src/render/camera.ts",
-      "sha256": "3b4ed8d389e233a4f77213090ca42be6f033dcfeb419bd0b7ec5d5df00123bc4",
-      "bytes": 1638
-    },
-    {
-      "path": "src/render/draw.ts",
-      "sha256": "cf572bdeb18b2a738217981a116da74e96cf1b7e9961b41451ec708692b2ea31",
-      "bytes": 26702
-    },
-    {
-      "path": "src/render/polish.test.ts",
-      "sha256": "cac794f90beb5507b056954a77743022cd31776852e0c698238fc966b7bdee34",
-      "bytes": 3168
-    },
-    {
-      "path": "src/selftest.ts",
-      "sha256": "ab158f0ac036251ce38ecf1f49515a70d06630856b8dbf67a6107bdf81c3c110",
-      "bytes": 7314
-    },
-    {
-      "path": "src/styles.css",
-      "sha256": "6b9156b5fc0193a3a76cfdbb1fcc50675710a0618deec303f528e78c2ef15d4c",
-      "bytes": 17588
-    },
-    {
-      "path": "src/ui/app.ts",
-      "sha256": "2b66e9f4e3715793b7f04586b5654a3dbbd39594f04fd7510911475a057412a8",
-      "bytes": 81895
-    },
-    {
-      "path": "src/ui/cinematics.test.ts",
-      "sha256": "a80264cec33dcbc193db823e6853d57ac0c4f3d82e4824779e4f71d3e52de151",
-      "bytes": 1581
-    },
-    {
-      "path": "src/ui/cinematics.ts",
-      "sha256": "7aba9620325393d934ba518f800ad832e2aadc671f4a45ce68929f23bf2fd64d",
-      "bytes": 1109
-    },
-    {
-      "path": "src/vite-env.d.ts",
-      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
-      "bytes": 38
+      "path": "vite.config.ts",
+      "sha256": "438fa6d6f99b6b9a87e3cd01865e207c0aff090f4fb002887dfb7e81f4127579",
+      "bytes": 215
     }
   ],
-  "history_exported": false,
-  "input_archive_sha256": null,
-  "authoring_workspace_recovered": true
+  "private_receipts_included": false
 }

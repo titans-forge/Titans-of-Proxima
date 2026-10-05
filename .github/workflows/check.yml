@@ -15,5 +15,6 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: npm run test:all
+      - run: node scripts/release-inventory.mjs --check
       - run: npm run build
       - run: node scripts/stage-release-licenses.mjs --check

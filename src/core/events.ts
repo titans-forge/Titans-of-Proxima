@@ -114,11 +114,13 @@ function makeEvent(state: GameState, kind: string) {
     const late = state.turn > 16 && hasTech(state, "he3extract");
     const reward = late ? 520 : 280;
     const what = late ? "8 kg of helium-3" : "22 t of metals";
+    const contractDeadline = state.turn + (late ? 16 : 12);
     return {
       id,
       kind,
+      contractDeadline,
       title: late ? "Helium-3 quota" : "Structural metals quota",
-      body: `An Earth consortium will pay ${reward} credits if ${what} arrives at Earth dock by sol ${state.turn + (late ? 16 : 12)}. Miss it and they will fine the charter.`,
+      body: `An Earth consortium will pay ${reward} credits if ${what} arrives at Earth dock by sol ${contractDeadline}. Miss it and they will fine the charter.`,
       choices: [
         choice("accept", "Accept the quota", "The contract is tracked on the Earth desk. Deliver from a ship in Earth orbit."),
         choice("decline", "Decline", "No penalty. The desk will offer other work later."),
@@ -321,13 +323,18 @@ export function applyChoice(state: GameState, eventId: string, choiceId: string)
 
   if (ev.kind === "contract" && choiceId === "accept") {
     const late = ev.title.startsWith("Helium");
+    // Original v1 offers persisted the promised deadline only in their body.
+    const legacyDeadline = Number(/\bby sol (\d+)\b/.exec(ev.body)?.[1]);
+    const offeredDeadline = ev.contractDeadline ?? legacyDeadline;
     state.contract = {
       id: uid(state, "con"),
       title: ev.title,
       detail: ev.body,
       need: late ? { he3: 8 } : { metals: 22 },
       reward: late ? 520 : 280,
-      deadline: state.turn + (late ? 16 : 12),
+      deadline: Number.isSafeInteger(offeredDeadline) && offeredDeadline > 0
+        ? offeredDeadline
+        : state.turn + (late ? 16 : 12),
     };
     pushLog(state, `Contract open: ${state.contract.title}. Deliver to Earth by sol ${state.contract.deadline}.`, "info");
     return null;
@@ -468,28 +475,22 @@ export function maybeQueueEvent(state: GameState): void {
     enqueueEvent(state, "contract");
     return;
   }
+  if (state.pendingWeather) {
+    if (state.turn < state.pendingWeather.dueTurn) return;
+    const kind = state.pendingWeather.kind;
+    state.pendingWeather = null;
+    state.foreshadow = null;
+    enqueueEvent(state, kind);
+    return;
+  }
+  // Legacy foreshadows were guesses, not scheduled hazards. Never force them.
+  state.foreshadow = null;
   if (state.turn < 4) return;
 
   const last = state.eventLastTurn ?? {};
   const eligible = (kind: string): boolean => state.turn - (last[kind] ?? -Infinity) >= 4;
-  if (hasTech(state, "warning") && !state.foreshadow && nextRand(state) < 0.45) {
-    const warned = ["solar", ...(state.worlds.mars.founded ? ["dust"] : [])].filter(eligible);
-    const kind = warned.length ? warned[Math.floor(nextRand(state) * warned.length)] as "solar" | "dust" : null;
-    if (kind) {
-      state.foreshadow = kind;
-      pushLog(
-        state,
-        kind === "dust"
-          ? "Early-warning net: a dust front is lifting on Mars. Expect it within a sol."
-          : "Early-warning net: proton flux is climbing. A solar event is likely within a sol.",
-        "warn",
-      );
-    }
-  }
-
   const chance = DIFF[state.difficulty].eventChance;
-  const biased = state.foreshadow && nextRand(state) < 0.7;
-  if (!biased && nextRand(state) > chance) return;
+  if (nextRand(state) > chance) return;
 
   const pool: { kind: string; w: number }[] = [
     { kind: "solar", w: 3 },
@@ -503,13 +504,6 @@ export function maybeQueueEvent(state: GameState): void {
     { kind: "anomaly", w: state.ships.some((s) => s.mission) ? 3 : 0 },
     { kind: "contract", w: !state.contract && state.turn > 12 ? 2 : 0 },
   ];
-  if (state.foreshadow) {
-    const hit = pool.find((p) => p.kind === state.foreshadow);
-    if (hit) hit.w += 8;
-    state.foreshadow = null;
-  }
-  // Apply cooldown after foreshadow weighting so an ineligible kind cannot be
-  // resurrected by its warning bonus.
   for (const p of pool) if (!eligible(p.kind)) p.w = 0;
   const total = pool.reduce((s, p) => s + Math.max(0, p.w), 0);
   if (total <= 0) return;
@@ -523,5 +517,13 @@ export function maybeQueueEvent(state: GameState): void {
       break;
     }
   }
-  if (kind) enqueueEvent(state, kind);
+  if (kind === "solar" || kind === "dust") {
+    state.pendingWeather = { kind, dueTurn: state.turn + 1 };
+    if (hasTech(state, "warning")) {
+      state.foreshadow = kind;
+      pushLog(state, kind === "dust"
+        ? "Early-warning net: a dust front is lifting on Mars. Expected next sol."
+        : "Early-warning net: proton flux is climbing. A solar event is expected next sol.", "warn");
+    }
+  } else if (kind) enqueueEvent(state, kind);
 }

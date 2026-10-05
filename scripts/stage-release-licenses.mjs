@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Titans Forge LLC.
-// Forge Game Hosting License 1.0; see LICENSE and LICENSING.md.
+// Forge Game Hosting License 1.1; see LICENSE and LICENSING.md.
 // Stage rights notices without modifying gameplay files or fetching anything.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +13,7 @@ if (process.argv.slice(2).some(arg => arg !== '--check')) {
   throw new Error('Only --check is supported');
 }
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const approvedHash = '28638be413f7815704fe68aed52a4ea4cb7bd4d28b35f2dca9b78d438a4a90bf';
+const approvedHash = 'ec1bf70e416eea98e50b2e912f9b83c52360a5bf2a7039c05f3b4b18877c6286';
 function readRegular(file) {
   const stat = fs.lstatSync(file);
   if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Expected a regular, non-symlink file: ' + path.basename(file));
@@ -26,7 +26,9 @@ readRegular(path.join(dist, 'index.html'));
 const checkpoint = JSON.parse(readRegular(path.join(root, 'LICENSING_CHECKPOINT.json')));
 if (checkpoint.schema !== 'forge_game_github_license_checkpoint_v1' ||
     checkpoint.license_sha256 !== approvedHash ||
-    !/^FG-LIC-20260930-[0-9]{2}-GH1$/.test(checkpoint.release_id)) {
+    checkpoint.release_id !== 'FG-LIC-20261005-PROXIMA-110' ||
+    checkpoint.license !== 'Forge Game Hosting License 1.1' ||
+    checkpoint.version !== '1.1.0') {
   throw new Error('Invalid licensing checkpoint');
 }
 const copies = [
@@ -34,6 +36,8 @@ const copies = [
   ['LICENSE', 'LICENSE.txt'],
   ['LICENSING.md', 'LICENSING.txt'],
   ['LICENSING_CHECKPOINT.json', 'LICENSING_CHECKPOINT.json'],
+  ['docs/licensing-history/Forge-Game-Hosting-License-1.0.txt', 'LICENSE-PREVIOUS-1.0.txt'],
+  ['docs/MEDIA_PROVENANCE_PUBLIC.json', 'MEDIA_PROVENANCE_PUBLIC.json'],
 ];
 for (const [source, target] of [['MEDIA_RIGHTS.md', 'MEDIA_RIGHTS.txt'], ['NOTICE', 'NOTICE.txt']]) {
   if (fs.existsSync(path.join(root, source))) copies.push([source, target]);

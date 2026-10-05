@@ -39,15 +39,27 @@ function onlySolarAt(turn: number) {
   game.eventLastTurn = Object.fromEntries(kinds.map((kind) => [kind, turn]));
   game.eventLastTurn.solar = 4;
   game.foreshadow = "solar";
+  game.script.contract = true;
   return game;
 }
 const tooSoon = onlySolarAt(7);
 for (let i = 0; i < 80; i++) maybeQueueEvent(tooSoon);
 equal(tooSoon.events.length, 0, "foreshadow must not resurrect a cooling-down event");
+equal(tooSoon.pendingWeather, undefined, "cooling-down weather must not be scheduled either");
 const ready = onlySolarAt(8);
-for (let i = 0; i < 80 && !ready.events.length; i++) maybeQueueEvent(ready);
-equal(ready.events[0]?.kind, "solar", "event becomes eligible at exactly four sols");
-equal(ready.eventLastTurn?.solar, 8);
+for (let i = 0; i < 80 && !ready.pendingWeather; i++) maybeQueueEvent(ready);
+equal(ready.pendingWeather?.kind, "solar", "weather becomes eligible at exactly four sols");
+equal(ready.pendingWeather?.dueTurn, 9, "eligible weather arrives one sol after selection");
+equal(ready.events.length, 0, "weather does not occur on its selection sol");
+equal(ready.eventLastTurn?.solar, 4, "selection does not restart the occurrence cooldown");
+const scheduledRng = ready.rng;
+maybeQueueEvent(ready);
+equal(ready.events.length, 0, "same-sol calls do not deliver pending weather early");
+equal(ready.rng, scheduledRng, "same-sol calls do not reroll pending weather");
+ready.turn = 9;
+maybeQueueEvent(ready);
+equal(ready.events[0]?.kind, "solar", "scheduled weather arrives next sol");
+equal(ready.eventLastTurn?.solar, 9, "cooldown restarts on actual occurrence");
 
 const scripted = createGame("charter", 144);
 scripted.turn = 9;

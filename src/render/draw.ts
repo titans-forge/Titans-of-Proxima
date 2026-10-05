@@ -1,11 +1,16 @@
 import { axialToPixel, hexPath, pixelToAxial, tileKey } from "../core/hex";
 import { hash01 } from "../core/rng";
 import { isWindowOpen } from "../core/routes";
+import type { RouteSelection } from "../core/routeIntel";
 import { landingAdvice } from "../core/actions";
 import type { BuildingId, GameState, LocationId, Terrain, Tile, WorldId } from "../core/types";
 import { terrainImage, buildingImage } from "./assets";
+import { continuousTerrainRect } from "./terrainLayout";
+import { hitSystemBody, systemNodes } from "./systemGeometry";
+import { renderSystemChart } from "./systemChart";
 import type { Forecast } from "../core/types";
 import { buildingStatus, type BuildingStatusInfo } from "../core/buildingStatus";
+import { MODULE_LABEL_FONT, MODULE_STATUS_FONT, MODULE_NAMES, layoutModuleAnnotations, moduleSpriteRect, moduleShadow, structuralOpacity, warningMarkerRect, type AnnotationRequest, type Rect } from "./moduleLayout";
 
 export const HEX = 50;
 
@@ -33,6 +38,8 @@ export interface DrawState {
   founding: boolean;
   anim: number;
   forecasts?: Partial<Record<WorldId, Forecast>>;
+  route?: RouteSelection;
+  annotationExclusions?: Rect[];
 }
 
 const STARS = Array.from({ length: 160 }, (_, i) => ({
@@ -86,13 +93,14 @@ export function renderFrame(
     ctx.save();
     ctx.translate(geom.cx + draw.cam.x, geom.cy + draw.cam.y);
     ctx.scale(draw.cam.zoom, draw.cam.zoom);
-    if (draw.game) drawSurface(ctx, draw, time);
+    if (draw.game) drawSurface(ctx, draw, geom, time);
     ctx.restore();
     if (draw.game) drawWeather(ctx, cssW, cssH, draw, time);
   } else {
     drawSystem(ctx, geom, draw, time);
   }
   drawVignette(ctx, cssW, cssH);
+  if (draw.game && (draw.mode === "mars" || draw.mode === "luna")) drawSurfaceAnnotations(ctx, draw, geom);
 }
 
 function drawStars(ctx: CanvasRenderingContext2D, w: number, h: number, time: number, anim: number): void {
@@ -130,40 +138,14 @@ function drawPlanetDisc(ctx: CanvasRenderingContext2D, geom: Geom, mode: "luna" 
   ctx.stroke();
 }
 
-function drawSurface(ctx: CanvasRenderingContext2D, draw: DrawState, time: number): void {
+function drawSurface(ctx: CanvasRenderingContext2D, draw: DrawState, geom: Geom, time: number): void {
   const game = draw.game!;
   const worldId: WorldId = draw.mode === "mars" ? "mars" : "luna";
   const world = game.worlds[worldId];
   const surface = terrainImage(worldId);
   if (surface.complete && surface.naturalWidth > 0 && world.tiles.length) {
-    const points = world.tiles.map((t) => axialToPixel(t.q, t.r, HEX));
-    const minX = Math.min(...points.map((p) => p.x)) - HEX;
-    const maxX = Math.max(...points.map((p) => p.x)) + HEX;
-    const minY = Math.min(...points.map((p) => p.y)) - HEX;
-    const maxY = Math.max(...points.map((p) => p.y)) + HEX;
-    ctx.save();
-    // Mirrored neighbors continue the terrain beyond playable hexes without
-    // exposing the image rectangle, even at the widest camera setting.
-    ctx.globalAlpha = 1;
-    const width = maxX - minX;
-    const height = maxY - minY;
-    const transform = ctx.getTransform();
-    const firstCol = Math.floor((-transform.e / transform.a - minX) / width);
-    const lastCol = Math.floor(((ctx.canvas.width - transform.e) / transform.a - minX) / width);
-    const firstRow = Math.floor((-transform.f / transform.d - minY) / height);
-    const lastRow = Math.floor(((ctx.canvas.height - transform.f) / transform.d - minY) / height);
-    for (let row = firstRow; row <= lastRow; row++) {
-      for (let col = firstCol; col <= lastCol; col++) {
-        const flipX = Math.abs(col % 2) === 1;
-        const flipY = Math.abs(row % 2) === 1;
-        ctx.save();
-        ctx.translate(minX + col * width + (flipX ? width : 0), minY + row * height + (flipY ? height : 0));
-        ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
-        ctx.drawImage(surface, 0, 0, width, height);
-        ctx.restore();
-      }
-    }
-    ctx.restore();
+    const rect = continuousTerrainRect(world.tiles, HEX, geom, surface.naturalWidth / surface.naturalHeight);
+    ctx.drawImage(surface, rect.x, rect.y, rect.w, rect.h);
   }
 
   const links: { a: Tile; b: Tile }[] = [];
@@ -231,10 +213,97 @@ function drawSurface(ctx: CanvasRenderingContext2D, draw: DrawState, time: numbe
   for (const item of buildings) {
     const b = item.tile.building!;
     const info = buildingStatus(b, item.tile.q, item.tile.r, draw.forecasts?.[worldId] ?? null);
-    const selected = draw.selected?.q === item.tile.q && draw.selected?.r === item.tile.r;
-    const hovered = draw.hover?.q === item.tile.q && draw.hover?.r === item.tile.r;
-    drawModule(ctx, b.type, item.x, item.y, 58, b.hp, b.progress, b.total, info, worldId, selected || hovered, draw.cam.zoom >= 0.95);
+    drawModule(ctx, b.type, item.x, item.y, 58, b.hp, b.progress, b.total, info, worldId);
   }
+}
+
+function drawSurfaceAnnotations(ctx: CanvasRenderingContext2D, draw: DrawState, geom: Geom): void {
+  const worldId = draw.mode === "mars" ? "mars" : "luna";
+  const requests: AnnotationRequest[] = [];
+  const roofs: { id: string; rect: { x: number; y: number; w: number; h: number } }[] = [];
+  const labels = new Map<string, { name: string; status: BuildingStatusInfo; detail: boolean }>();
+  const zoom = draw.cam.zoom;
+  ctx.save();
+  ctx.font = MODULE_LABEL_FONT;
+  for (const tile of draw.game!.worlds[worldId].tiles) {
+    const b = tile.building;
+    if (!b) continue;
+    const id = tileKey(tile.q, tile.r);
+    const point = axialToPixel(tile.q, tile.r, HEX);
+    const x = geom.cx + draw.cam.x + point.x * zoom;
+    const y = geom.cy + draw.cam.y + (point.y - 2) * zoom;
+    const sprite = buildingImage(worldId, b.type);
+    const rect = moduleSpriteRect(worldId, b.type, sprite && sprite.image.naturalWidth > 0 ? sprite.sw / sprite.sh : 1);
+    const roof = { x: x + rect.x * zoom, y: y + rect.y * zoom, w: rect.w * zoom, h: rect.h * zoom };
+    roofs.push({ id, rect: roof });
+    const selected = draw.selected?.q === tile.q && draw.selected?.r === tile.r;
+    const hovered = draw.hover?.q === tile.q && draw.hover?.r === tile.r;
+    const status = buildingStatus(b, tile.q, tile.r, draw.forecasts?.[worldId] ?? null);
+    const detail = selected || hovered;
+    if (zoom < 0.95 && !detail && status.status === "operating") continue;
+    const name = MODULE_NAMES[b.type];
+    const showStatus = detail || status.status !== "operating";
+    const nameWidth = ctx.measureText(name).width;
+    ctx.font = MODULE_STATUS_FONT;
+    const statusWidth = showStatus ? ctx.measureText(status.label).width : 0;
+    ctx.font = MODULE_LABEL_FONT;
+    requests.push({ id, x, top: roof.y, bottom: roof.y + roof.h, left: roof.x, right: roof.x + roof.w, width: Math.ceil(Math.max(nameWidth, statusWidth)) + 14, height: showStatus ? 34 : 20, priority: selected ? 3 : hovered ? 2 : status.status !== "operating" ? 1 : 0 });
+    labels.set(id, { name, status, detail: showStatus });
+  }
+  const viewport = { x: geom.cx - geom.w / 2 + 5, y: geom.cy - geom.h / 2 + 5, w: geom.w - 10, h: geom.h - 42 };
+  const exclusions = draw.annotationExclusions ?? [];
+  const placements = layoutModuleAnnotations(requests, viewport, roofs, exclusions);
+  const markedExclusions = [...exclusions, ...placements.map(p => p.rect)];
+  for (const request of requests) {
+    const status = labels.get(request.id)!.status;
+    if (status.status === "operating" || placements.some(p => p.id === request.id)) continue;
+    const marker = warningMarkerRect(request, viewport, markedExclusions);
+    if (!marker) continue;
+    ctx.fillStyle = "#10151c";
+    ctx.fillRect(marker.x, marker.y, marker.w, marker.h);
+    ctx.strokeStyle = status.status === "unpowered" || status.status === "dead" ? "#ff9187" : "#f2d3a4";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(marker.x + 0.5, marker.y + 0.5, marker.w - 1, marker.h - 1);
+    ctx.font = MODULE_STATUS_FONT;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(status.status === "construction" ? "+" : "!", marker.x + marker.w / 2, marker.y + marker.h / 2);
+    markedExclusions.push(marker);
+  }
+  // Paint important callouts last, while layout reserves their space first.
+  for (const placement of placements.reverse()) {
+    const { name, status, detail } = labels.get(placement.id)!;
+    const r = placement.rect;
+    const request = requests.find(item => item.id === placement.id)!;
+    if (placement.leader) {
+      ctx.beginPath();
+      ctx.moveTo(request.x, (request.top + request.bottom) / 2);
+      ctx.lineTo(r.x + r.w / 2, r.y + r.h / 2);
+      ctx.strokeStyle = "rgba(6, 10, 16, 0.85)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(232, 240, 248, 0.9)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(10, 14, 19, 0.9)";
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeStyle = request.priority >= 2 ? "rgba(242,211,164,0.85)" : "rgba(223,231,239,0.2)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = MODULE_LABEL_FONT;
+    ctx.fillStyle = "#f0f3f6";
+    ctx.fillText(name, r.x + r.w / 2, r.y + 10);
+    if (detail) {
+      ctx.font = MODULE_STATUS_FONT;
+      ctx.fillStyle = status.status === "operating" ? "#8ed7a8" : status.status === "unpowered" || status.status === "dead" ? "#ff9187" : "#f2d3a4";
+      ctx.fillText(status.label, r.x + r.w / 2, r.y + 25);
+    }
+  }
+  ctx.restore();
 }
 
 function drawHex(
@@ -362,16 +431,15 @@ function drawModule(
   total: number,
   status: BuildingStatusInfo,
   world: WorldId,
-  detail: boolean,
-  showLabel: boolean,
 ): void {
   ctx.save();
   ctx.translate(x, y - 2);
-  if (status.status !== "operating") ctx.globalAlpha = status.status === "construction" ? 0.72 : 0.45;
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  const shadow = moduleShadow(world, type);
+  ctx.fillStyle = "rgba(0,0,0,0.24)";
   ctx.beginPath();
-  ctx.ellipse(0, s * 0.72, s * 0.7, s * 0.22, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, shadow.y, shadow.rx, shadow.ry, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.globalAlpha = structuralOpacity(status.status, hp);
 
   const palette: Record<string, string> = {
     command: "#d7c4a2",
@@ -400,23 +468,21 @@ function drawModule(
 
   const sprite = buildingImage(world, type);
   if (sprite && sprite.image.complete && sprite.image.naturalWidth > 0 && sprite.sw > 0 && sprite.sh > 0) {
-    ctx.globalAlpha *= Math.max(0.4, Math.min(1, hp / 100));
-    ctx.drawImage(sprite.image, sprite.sx, sprite.sy, sprite.sw, sprite.sh, -s * 0.82, -s * 0.9, s * 1.64, s * 1.64);
+    const rect = moduleSpriteRect(world, type, sprite.sw / sprite.sh, s);
+    ctx.drawImage(sprite.image, sprite.sx, sprite.sy, sprite.sw, sprite.sh, rect.x, rect.y, rect.w, rect.h);
     ctx.globalAlpha = 1;
     if (progress > 0) {
       ctx.strokeStyle = "rgba(242, 211, 164, 0.9)";
       ctx.setLineDash([3, 3]);
-      ctx.strokeRect(-s * 0.78, -s * 0.78, s * 1.56, s * 1.56);
+      ctx.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
       ctx.setLineDash([]);
     }
     if (hp < 92 && progress === 0) {
       ctx.fillStyle = "rgba(10, 12, 16, 0.72)";
-      ctx.fillRect(-s * 0.72, s * 0.66, s * 1.44, 4);
+      ctx.fillRect(rect.x + 3, rect.y + rect.h - 5, rect.w - 6, 4);
       ctx.fillStyle = hp < 40 ? "#ff7d73" : "#f2c572";
-      ctx.fillRect(-s * 0.72, s * 0.66, s * 1.44 * (hp / 100), 4);
+      ctx.fillRect(rect.x + 3, rect.y + rect.h - 5, (rect.w - 6) * (hp / 100), 4);
     }
-    if (showLabel || detail) label(ctx, type, 0, s * 0.9);
-    if (detail || status.status !== "operating") statusBadge(ctx, status, s * 0.48, -s * 0.62, detail);
     ctx.restore();
     return;
   }
@@ -530,6 +596,7 @@ function drawModule(
     ctx.stroke();
   }
 
+  ctx.globalAlpha = 1;
   if (progress > 0) {
     ctx.strokeStyle = "rgba(242, 211, 164, 0.9)";
     ctx.setLineDash([3, 3]);
@@ -548,37 +615,7 @@ function drawModule(
     ctx.fillStyle = hp < 40 ? "#ff7d73" : "#f2c572";
     ctx.fillRect(-s * 0.4, s * 0.62, s * 0.8 * (hp / 100), 4);
   }
-  if (showLabel || detail) label(ctx, type, 0, s * 0.9);
-  if (detail || status.status !== "operating") statusBadge(ctx, status, s * 0.48, -s * 0.62, detail);
   ctx.restore();
-}
-
-function statusBadge(ctx: CanvasRenderingContext2D, info: BuildingStatusInfo, x: number, y: number, detail: boolean): void {
-  ctx.save();
-  ctx.globalAlpha = 1;
-  ctx.font = "600 10px ui-monospace, monospace";
-  ctx.textAlign = "center";
-  const text = detail ? info.label : info.status === "construction" ? "+" : "!";
-  const w = Math.max(17, ctx.measureText(text).width + 10);
-  ctx.fillStyle = "rgba(8, 12, 18, 0.88)";
-  ctx.fillRect(x - w / 2, y - 7, w, 11);
-  ctx.strokeStyle = "rgba(232,238,246,0.55)";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(x - w / 2, y - 7, w, 11);
-  ctx.fillStyle = info.status === "operating" ? "#8ed7a8" : info.status === "unpowered" || info.status === "dead" ? "#ff9187" : "#f2d3a4";
-  ctx.fillText(text, x, y + 2);
-  ctx.restore();
-}
-
-function label(ctx: CanvasRenderingContext2D, type: BuildingId, x: number, y: number): void {
-  const names: Partial<Record<BuildingId, string>> = { command: "Command", habitat: "Habitat", solar: "Solar", fission: "Fission", fusion: "Fusion", ice: "Ice", isru: "ISRU", greenhouse: "Greenhouse", shipyard: "Shipyard", lab: "Lab", pad: "Starport", defense: "Defense", medical: "Medical", he3: "He-3", depot: "Depot", regolith: "Regolith", processor: "Processor", robotics: "Robotics", aresfab: "Aresfab" };
-  ctx.font = "500 10px ui-monospace, monospace";
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(240, 244, 248, 0.88)";
-  ctx.strokeStyle = "rgba(0,0,0,0.75)";
-  ctx.lineWidth = 3;
-  ctx.strokeText(names[type] ?? type, x, y);
-  ctx.fillText(names[type] ?? type, x, y);
 }
 
 function drawWeather(ctx: CanvasRenderingContext2D, w: number, h: number, draw: DrawState, time: number): void {
@@ -604,6 +641,10 @@ function drawWeather(ctx: CanvasRenderingContext2D, w: number, h: number, draw: 
 }
 
 function drawSystem(ctx: CanvasRenderingContext2D, geom: Geom, draw: DrawState, time: number): void {
+  if (draw.mode === "system") {
+    renderSystemChart(ctx, geom, draw, time);
+    return;
+  }
   const c = geom;
   const earth = { x: c.cx - Math.min(220, c.w * 0.22), y: c.cy + 16 };
   const mars = { x: c.cx + Math.min(250, c.w * 0.26), y: c.cy - 18 };
@@ -723,14 +764,6 @@ export function pickHex(mx: number, my: number, cam: Camera, geom: Geom): { q: n
   return axial;
 }
 
-export function pickBody(mx: number, my: number, geom: Geom, turn: number, time: number, anim = 1): LocationId | null {
-  const earth = { x: geom.cx - Math.min(220, geom.w * 0.22), y: geom.cy + 16 };
-  const mars = { x: geom.cx + Math.min(250, geom.w * 0.26), y: geom.cy - 18 };
-  const angle = turn * 0.55 + time * 0.00012 * anim;
-  const luna = { x: earth.x + Math.cos(angle) * 108, y: earth.y + Math.sin(angle) * 64 };
-  const hit = (p: { x: number; y: number }, r: number) => (mx - p.x) ** 2 + (my - p.y) ** 2 <= r * r;
-  if (hit(luna, 22)) return "luna";
-  if (hit(earth, 48)) return "earth";
-  if (hit(mars, 36)) return "mars";
-  return null;
+export function pickBody(mx: number, my: number, geom: Geom): LocationId | null {
+  return hitSystemBody(mx, my, systemNodes(geom));
 }

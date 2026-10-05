@@ -1,5 +1,6 @@
 {
   "schema": "forge_game_media_inventory_v1",
+  "version": "1.1.0",
   "assets": [
     {
       "path": "public/assets/building-atlas-expansion.png",
@@ -22,14 +23,29 @@
       "bytes": 1387820
     },
     {
+      "path": "public/assets/lunar-terrain-v2.png",
+      "sha256": "b7612630b31782fdcdb9dec8c484bdeb1c8cb282a1b57b7c9fa68e346a85ac34",
+      "bytes": 3730173
+    },
+    {
       "path": "public/assets/lunar-terrain.png",
       "sha256": "745990f9b5cc8c3109b70d2fb2bc4e32e375f2d3525ab3ea78b3f93e90094e62",
       "bytes": 3760683
     },
     {
+      "path": "public/assets/mars-terrain-v2.png",
+      "sha256": "df80e407c92e43f2f2501fbf9254fd53bce890fe87f2caeb8a22d489feec773f",
+      "bytes": 3365367
+    },
+    {
       "path": "public/assets/mars-terrain.png",
       "sha256": "ba6ecdb988404c5f49c1a9e126869a4e8dac4de5124197681ad2ceafe79ec261",
       "bytes": 2771137
+    },
+    {
+      "path": "public/assets/proxima-aresfab-mars-v2.png",
+      "sha256": "5e84e7af8172d7e1e8f3abf12b636455931afb5300c258fb0206925191e2dcde",
+      "bytes": 1769917
     },
     {
       "path": "public/assets/proxima-industry-v1.png",
@@ -45,6 +61,11 @@
       "path": "public/assets/proxima-specialists-v1.png",
       "sha256": "be302907b6c71434adda648c746e5336691f3025d3fff3580d8150375492751b",
       "bytes": 1997068
+    },
+    {
+      "path": "public/assets/proxima-system-atlas-v1.png",
+      "sha256": "53d0cc2c8266b2a7cd40d0156bd1e057e5e668c4349f5c3c904da7720704cdc2",
+      "bytes": 1675543
     },
     {
       "path": "public/assets/starship-luna-arrival-v1.png",
@@ -80,6 +101,16 @@
       "path": "public/audio/holst-venus.mp3",
       "sha256": "cceac999c61560ee867b88f45ec1e51c3b1f76b88a698b49b960ea3bd6453f63",
       "bytes": 12290413
+    },
+    {
+      "path": "public/favicon.svg",
+      "sha256": "4122e5e5a04b2019e60f2fad61e21891bc002bf0ee4ed5c9f0c09187a8e9ec88",
+      "bytes": 327
+    },
+    {
+      "path": "public/preview.svg",
+      "sha256": "f0f2090e3259e02bb29b7033275327dbb08c7d2e7311671b0704aaa6164a8b0c",
+      "bytes": 5414
     }
   ],
   "rights_record": "MEDIA_RIGHTS.md",

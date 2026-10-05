@@ -1,9 +1,35 @@
-# Titans of Proxima: upgraded-edition licensing
+# Release Licensing
 
-Checkpoint FG-LIC-20260930-03-GH1, September 30, 2026. Read the complete [Forge Game Hosting License 1.0](LICENSE).
+Titans of Proxima **1.1.0**, checkpoint **FG-LIC-20261005-PROXIMA-110**,
+uses the **Forge Game Hosting License 1.1** supplied in `LICENSE`.
 
-Companies with gross annual revenue over US$1,000,000 need a separate agreement to publicly host their own playable copies of covered Titans Forge-controlled material. Ordinary playing, private internal/classroom use and other exceptions are defined in the full terms. This is a source-available hosting-restricted license, not OSI open source.
+## Plain-English Summary
 
-The owner confirms substantial upgrades since the original grants. Those existing upgrades are not created by this packaging migration. Previously MIT-licensed material remains usable and hostable under MIT; earlier grants are not revoked. A retained earlier notice does not automatically MIT-license future additions. No original root MIT notice was identified in this selected input, so none is invented; absence is not proof no prior grant exists. No exclusive Forge rights over already permissively licensed material are claimed.
+- Individuals can freely download, play, study, modify, and share under the terms.
+- Private internal use is free for everyone, regardless of company revenue.
+- Schools, universities, and nonprofit educational institutions can host for
+  genuine teaching or research regardless of budget or revenue. Ordinary tuition
+  does not cancel the exemption. Commercial entertainment or resale services
+  cannot qualify merely by calling themselves educational.
+- Other companies at or below US$1 million annual gross revenue can host freely.
+- Other companies **strictly above** that threshold need a separate written
+  commercial license before hosting their own publicly playable copy.
+- Company revenue includes controlled subsidiaries for the most recently
+  completed fiscal year. The full license defines currency conversion.
+- Official-page links and authorized-platform embeds are not hosting your own copy.
+- Preserve notices and identify modifications when redistributing.
 
-Third-party/media notices are separate: [MEDIA_RIGHTS.md](MEDIA_RIGHTS.md). [LICENSING_CHECKPOINT.json](LICENSING_CHECKPOINT.json) and [SOURCE_SNAPSHOT.json](SOURCE_SNAPSHOT.json) bind this export. Source availability does not establish independent rights clearance, clinical/engineering validation or customer usability. Titans of Mars remains a separate, unchanged MIT game.
+The full license controls if this summary differs. This is source-available,
+not OSI open source. No commercial fee is specified in the community terms.
+
+## Earlier Grants and Third-Party Rights
+
+Version 1.1 adds an educational hosting exemption; it does not revoke earlier
+MIT, Forge 1.0, or other grants. Identical material previously obtained under
+another license keeps those permissions. The Forge terms cover only identified
+Titans Forge-controlled material, not independent third-party rights or marks.
+See `MEDIA_RIGHTS.md` for recordings, asset provenance, and jurisdiction caveats.
+
+Historical License 1.0, its checkpoint, and its source snapshot are retained in
+`docs/licensing-history/`. The current checkpoint and source/media inventories
+bind this release without rewriting those historical records.

@@ -42,6 +42,14 @@ export interface LaunchDraft {
   crew: number;
 }
 
+// Cargo propellant and tank fuel draw from the same ground store atomically.
+export function launchResourceDelta(ship: Ship, draft: LaunchDraft): Record<CargoId, number> {
+  const delta = emptyCargo();
+  for (const k of CARGO_IDS) delta[k] = (draft.cargo[k] ?? 0) - ship.cargo[k];
+  delta.propellant += draft.fuel - ship.fuel;
+  return delta;
+}
+
 export function canSpend(state: GameState, amount: number): boolean {
   return state.credits - amount >= DIFF[state.difficulty].overdraft;
 }
@@ -294,6 +302,10 @@ function checkLaunch(state: GameState, shipId: string, draft: LaunchDraft): Laun
   if (!ship || ship.loc === "transit" || ship.mission) return { ...empty, reason: "That hull is not in dock." };
   if (state.founding?.shipId === ship.id) return { ...empty, reason: "Land this hull before sending it on.", ship, from: ship.loc };
   const from = ship.loc;
+  if (!["earth", "luna", "mars"].includes(draft.dest)) return { ...empty, reason: "Unknown destination.", ship, from };
+  if (!Number.isFinite(draft.fuel) || !Number.isInteger(draft.crew) || CARGO_IDS.some(k => !Number.isFinite(draft.cargo[k] ?? 0))) {
+    return { ...empty, reason: "Manifest must contain finite loads and a whole crew count.", ship, from };
+  }
   if (draft.dest === from) return { ...empty, reason: "Already there.", ship, from };
   if (state.outcome) return { ...empty, reason: "The charter is closed.", ship, from };
   const def = SHIPS[ship.cls];
@@ -344,15 +356,11 @@ function checkLaunch(state: GameState, shipId: string, draft: LaunchDraft): Laun
   } else {
     const world = state.worlds[from];
     const cap = storageCap(state, world);
+    const changes = launchResourceDelta(ship, draft);
     for (const k of CARGO_IDS) {
-      const delta = (draft.cargo[k] ?? 0) - ship.cargo[k];
+      const delta = changes[k];
       if (delta > 0 && world.stock[k] + 1e-6 < delta) return { ...empty, reason: `Not enough ${k} in the outpost stores.`, ship, from, ...route, founding };
       if (delta < 0 && world.stock[k] - delta > cap[k] + 1e-6) return { ...empty, reason: `${k} storage is full — it cannot come off the ship.`, ship, from, ...route, founding };
-    }
-    const fuelDelta = draft.fuel - ship.fuel;
-    if (fuelDelta > 0 && world.stock.propellant + 1e-6 < fuelDelta) return { ...empty, reason: "Not enough propellant in store.", ship, from, ...route, founding };
-    if (fuelDelta < 0 && world.stock.propellant - fuelDelta > cap.propellant + 1e-6) {
-      return { ...empty, reason: "Propellant tanks on the ground are full.", ship, from, ...route, founding };
     }
     const crewDelta = draft.crew - ship.crew;
     if (crewDelta > 0 && world.pop - crewDelta < 2) return { ...empty, reason: "Leave at least two people on the outpost.", ship, from, ...route, founding };
@@ -374,11 +382,10 @@ export function launchShip(state: GameState, shipId: string, draft: LaunchDraft)
     }
   } else {
     const world = state.worlds[from];
+    const changes = launchResourceDelta(ship, draft);
     for (const k of CARGO_IDS) {
-      const delta = (draft.cargo[k] ?? 0) - ship.cargo[k];
-      world.stock[k] -= delta;
+      world.stock[k] = Math.max(0, world.stock[k] - changes[k]);
     }
-    world.stock.propellant -= draft.fuel - ship.fuel;
     world.pop -= draft.crew - ship.crew;
     world.launches += 1;
   }

@@ -605,14 +605,18 @@ export function suggestions(state: GameState, worldId: WorldId): BuildingId[] {
   const food = runway(world.stock.food, f.produced.food, f.demand.food);
   const water = runway(world.stock.water, f.produced.water, f.demand.water);
   const o2 = runway(world.stock.oxygen, f.produced.oxygen, f.demand.oxygen);
-  consider("ice", water !== null && water < 12);
+  const feedstockLimited = world.tiles.some(t => t.building?.type === "isru" &&
+    f.tiles[tileKey(t.q, t.r)]?.some(line => line.includes("limited") || line.includes("idle")));
+  consider("solar", f.brownout || f.unpowered.length > 0);
+  consider("ice", water !== null && (water < 12 || !world.tiles.some(t => active(t.building) && t.building.type === "ice")));
+  // Protect the starter metal budget and supply ISRU before adding consumers.
+  consider("regolith", f.produced.metals < 1 || (feedstockLimited && f.net.regolith < 0));
   consider("greenhouse", food !== null && food < 12);
-  consider("isru", o2 !== null && o2 < 12);
+  consider("isru", o2 !== null && o2 < 12 && !feedstockLimited);
   consider("solar", f.energyGen + 0.2 < f.energyDraw || f.brownout);
-  consider("regolith", world.stock.metals < 18 || f.produced.metals < 1);
   consider("habitat", f.housing - world.pop < 4);
   consider("lab", state.tech.current !== null && f.rp < 6);
-  return out;
+  return [...new Set(out)];
 }
 
 export function objectives(state: GameState): Objective[] {

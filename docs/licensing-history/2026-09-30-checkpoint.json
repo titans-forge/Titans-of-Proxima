@@ -1,0 +1,16 @@
+{
+  "schema": "forge_game_github_license_checkpoint_v1",
+  "release_id": "FG-LIC-20260930-03-GH1",
+  "game": "Titans of Proxima",
+  "repository": "titans-forge/Titans-of-Proxima",
+  "recorded_date": "2026-09-30",
+  "license": "Forge Game Hosting License 1.0",
+  "license_sha256": "28638be413f7815704fe68aed52a4ea4cb7bd4d28b35f2dca9b78d438a4a90bf",
+  "previous_mit_license_sha256": null,
+  "previous_source_snapshot_sha256": "ba895bd25482b3c977202b6fdca69d17b1475cb022164d22338f601ef665af9d",
+  "prior_grants_preserved": true,
+  "third_party_and_media_terms_preserved": true,
+  "owner_upgrade_confirmation": "Owner confirms substantial upgrades since original grants; migration adds no gameplay changes.",
+  "approval": "Owner approved license wording and requested publication of the remaining catalog games.",
+  "recovery_scope": "Selected original authoring source"
+}

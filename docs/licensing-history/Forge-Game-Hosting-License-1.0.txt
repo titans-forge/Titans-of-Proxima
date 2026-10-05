@@ -1,5 +1,5 @@
-Forge Game Hosting License 1.1
-Approved by the owner on October 5, 2026.
+Forge Game Hosting License 1.0
+Approved by the owner on September 30, 2026.
 This license applies only to releases identified in accompanying licensing checkpoints.
 Earlier permissions and separately licensed components remain unaffected.
 
@@ -30,7 +30,6 @@ permissions do not grant rights over third-party material beyond its own terms.
 A company whose gross annual revenue exceeds US$1,000,000 must obtain a
 separate written commercial hosting license from Titans Forge LLC before
 hosting the covered release or a modified version of its covered material.
-The educational exemption in Section 4 applies regardless of revenue.
 The threshold is strictly **over** US$1,000,000, not equal to that amount.
 It applies whether or not the company charges players or earns money from
 this particular game. Companies at or below that threshold do not require
@@ -45,17 +44,6 @@ public financial source. Existing grants under other licenses remain available
 as described in Section 1.
 
 ### 4. What is not restricted hosting
-
-Schools, universities, and nonprofit educational institutions may host the
-covered material for genuine teaching or research without a separate
-commercial hosting license, regardless of their revenue or budget. For this
-exemption, schools and universities are institutions established primarily
-to provide formal education; nonprofit educational institutions are nonprofit
-organizations whose principal purpose is education. Ordinary tuition or
-educational fees do not remove this exemption. It does not cover a commercial
-entertainment, game-distribution, or resale service merely described as
-educational, or a business hosting on its own behalf through an educational
-institution. Other businesses remain subject to Section 3.
 
 Ordinary play, private internal use, private classroom use, a link to an
 official game page, and an embedded player whose game is actually served by
@@ -91,4 +79,5 @@ with Titans Forge LLC. These community terms do not set a fee or authorize
 anyone to accept a commercial agreement on the Licensor's behalf. Licensing
 inquiries may be directed through the official Titans Forge itch.io profile:
 https://titans-forge.itch.io/.
+
 

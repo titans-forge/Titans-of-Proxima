@@ -1,8 +1,8 @@
-import type { BuildingId, WorldId } from "../core/types";
+import type { BuildingId, LocationId, WorldId } from "../core/types";
 
 export interface AtlasSource { image: HTMLImageElement; sx: number; sy: number; sw: number; sh: number }
 const cache = new Map<string, HTMLImageElement>();
-const BASE = import.meta.env.BASE_URL;
+const BASE = import.meta.env?.BASE_URL ?? "/";
 function load(path: string): HTMLImageElement {
   let img = cache.get(path);
   if (!img) { img = new Image(); img.src = path; cache.set(path, img); }
@@ -10,7 +10,12 @@ function load(path: string): HTMLImageElement {
 }
 
 export function terrainImage(world: WorldId): HTMLImageElement {
-  return load(`${BASE}assets/${world === "mars" ? "mars-terrain.png" : "lunar-terrain.png"}`);
+  return load(`${BASE}assets/${world === "mars" ? "mars-terrain-v2.png" : "lunar-terrain-v2.png"}`);
+}
+
+export function systemSprite(id: LocationId | "ship"): AtlasSource {
+  const index = { earth: 0, luna: 1, mars: 2, ship: 3 }[id];
+  return atlasFrame(load(`${BASE}assets/proxima-system-atlas-v1.png`), index, 2, 2);
 }
 
 const MAIN: Record<WorldId, Partial<Record<BuildingId, number>>> = {
@@ -22,8 +27,9 @@ const EXPANSION: Record<WorldId, Partial<Record<BuildingId, number>>> = {
   luna: { defense: 0, greenhouse: 1, pad: 2 },
 };
 export interface SpriteSpec { file: string; index: number; cols: number; rows: number }
-function spriteSpec(world: WorldId, type: BuildingId): SpriteSpec {
-  // Shared art is deliberate; the structure name remains the gameplay authority.
+export function spriteSpec(world: WorldId, type: BuildingId): SpriteSpec {
+  if (world === "mars" && type === "aresfab") return { file: "proxima-aresfab-mars-v2.png", index: 0, cols: 1, rows: 1 };
+  // Other industry art stays shared; structure IDs remain the gameplay authority.
   const industry: Partial<Record<BuildingId, number>> = { pad: 0, robotics: 1, aresfab: 2, depot: 3 };
   if (industry[type] !== undefined) return { file: "proxima-industry-v1.png", index: industry[type]!, cols: 2, rows: 2 };
   const science: Partial<Record<BuildingId, number>> = { lab: 0, medical: 1, he3: 2, processor: 3 };

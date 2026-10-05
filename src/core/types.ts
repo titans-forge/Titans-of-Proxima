@@ -172,6 +172,8 @@ export interface GameEvent {
   title: string;
   body: string;
   choices: EventChoice[];
+  /** Fixed when a quota is offered; absent in legacy v1 offers. */
+  contractDeadline?: number;
 }
 
 export interface EventChoice {
@@ -212,6 +214,8 @@ export interface GameState {
   log: LogLine[];
   founding: { shipId: string; world: WorldId } | null;
   foreshadow: "solar" | "dust" | null;
+  /** Weather is scheduled independently of whether the player can see it. */
+  pendingWeather?: { kind: "solar" | "dust"; dueTurn: number } | null;
   /** Last sol on which each random event kind was enqueued; absent in legacy saves. */
   eventLastTurn?: Record<string, number>;
   priceMul: number;
